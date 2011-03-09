@@ -1,12 +1,15 @@
+#!/bin/sh
+
 ##############################################################################
 #
-# Make Universal Framework
+# Universal Framework Builder for iOS
 #
 # By Karl Stenerud
 #
-# This script generates a universal (iOS + simulator) static framework from
-# existing iOS and simulator framework builds within a project, for both
-# Debug and Release configurations.
+#
+# This script combines frameworks from multiple platforms into a single,
+# "static library" universal framework.
+#
 #
 # License:
 #
@@ -19,84 +22,133 @@
 ##############################################################################
 
 
-# Get arguments
-if [ $# -ne 2 ]; then
-    echo >&2 "Usage: $0 <build | clean | rebuild> <Target>"
-    exit 1
-fi
+show_help()
+{
+    echo >&2 "Usage: $0 [OPTIONS] <Framework Target>"
+    echo >&2 "Options:"
+    echo >&2 "    -h or -?: This help text"
+    echo >&2 "    -p <platforms>: Platforms to build"
+    echo >&2 "    -c <configurations>: Configurations to build"
+    echo >&2 "    -a <action>: One of: build, clean, rebuild (or \"clean build\")"
+    echo >&2
+    echo >&2 "The default is equivalent to: -p \"iphoneos iphonesimulator\" -c \"Debug Release\" -a build"
+}
 
-UFW_DO_CLEAN=0
-UFW_DO_BUILD=0
-UFW_TASK="Unknown"
-case "$1" in
-    build)
-        UFW_TASK="Build"
-        UFW_DO_CLEAN=0
-        UFW_DO_BUILD=1;;
-    clean)
-        UFW_TASK="Clean"
-        UFW_DO_CLEAN=1
-        UFW_DO_BUILD=0;;
-    rebuild)
-        UFW_TASK="Rebuild"
-        UFW_DO_CLEAN=1
-        UFW_DO_BUILD=1;;
+
+# Defaults
+
+# Default platforms to build for (all will be combined into a universal framework)
+UFW_PLATFORMS="iphoneos iphonesimulator"
+
+# Default configurations build (builds one universal framework per configuration)
+UFW_CONFIGURATIONS="Debug Release"
+
+# Default build action
+UFW_ACTION="build"
+
+# Default build dir
+UFW_BUILD_DIR="./build"
+
+
+# Get arguments
+OPTIND=1
+while getopts "h?a:c:p:" opt; do
+  case "$opt" in
+    h|\?) show_help; exit 0;;
+    a) UFW_ACTION="$OPTARG";;
+    c) UFW_CONFIGURATIONS="$OPTARG";;
+    p) UFW_PLATFORMS="$OPTARG";;
+  esac
+done
+shift $((OPTIND-1))
+if [ "$1" = -- ]; then shift; fi
+
+case "${UFW_ACTION}" in
+    build) ;;
+    clean) ;;
+    "clean build") ;;
+    rebuild) UFW_ACTION="clean build";;
     *)
-        echo >&2 "Usage: $0 <build | clean | rebuild> <Target>"
+        echo >&2 "${UFW_ACTION}: Unknown action"
+        show_help
         exit 1;;
 esac
 
-UFW_TARGET=$2
+if [ $# != 1 ]; then
+    show_help
+    exit 1
+fi
+
+UFW_TARGET=$1
 
 
 # Global vars
-UFW_SDK_VERSION=$(echo "${SDK_NAME}" | grep -o "[0-9].*$")
+
+if [ ! -z ${BUILD_DIR} ]; then
+    # Use the build dir specified by XCode
+    UFW_BUILD_DIR="${BUILD_DIR}"
+fi
+
+if [ -z ${SDK_NAME} ]; then
+    # Use the latest iphoneos SDK available
+    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o "iphoneos.*$")
+    while read -r line; do
+        UFW_SDK_VERSION="${line}"
+    done <<< "${UFW_GREP_RESULT}"
+else
+    # Use the SDK specified by XCode
+    UFW_SDK_VERSION="${SDK_NAME}"
+fi
+
+UFW_SDK_VERSION=$(echo "${UFW_SDK_VERSION}" | grep -o "[0-9].*$")
 UFW_EXE_FOLDER_PATH="${UFW_TARGET}.framework"
 UFW_EXE_PATH="${UFW_EXE_FOLDER_PATH}/${UFW_TARGET}"
 
 
-echo "${UFW_TASK} Universal ${UFW_EXE_FOLDER_PATH}"
+# Setup is complete. Time to start doing something useful
+echo "${UFW_ACTION} Universal ${UFW_EXE_FOLDER_PATH}"
 
 
-# Always delete the universal framework dir
-rm -rf "${BUILD_DIR}/Debug-universal"
-rm -rf "${BUILD_DIR}/Release-universal"
+# Always delete the universal framework dirs to start out clean
+for configuration in ${UFW_CONFIGURATIONS}; do
+	rm -rf "${UFW_BUILD_DIR}/${configuration}-universal"
+done
 
+# Run for all selected configurations
+for configuration in ${UFW_CONFIGURATIONS}; do
+	for platform in ${UFW_PLATFORMS}; do
+		xcodebuild -sdk "${platform}${UFW_SDK_VERSION}" -configuration "${configuration}" -target "${UFW_TARGET}" ${UFW_ACTION}
+		if [ "$?" != "0" ]; then echo >&2 "Error: xcodebuild failed"; exit 1; fi
+	done
 
-# Clean all targets
-if [ ${UFW_DO_CLEAN} -eq 1 ]; then
-    for UFW_CONFIG in Debug Release; do
-        for UFW_PLATFORM in iphoneos iphonesimulator; do
-            xcodebuild -sdk "${UFW_PLATFORM}${UFW_SDK_VERSION}" -configuration "${UFW_CONFIG}" -target "${UFW_TARGET}" clean
-            if [ "$?" != "0" ]; then echo >&2 "xcodebuild failed"; exit 1; fi
-        done
-    done
-fi
+    # Unless we are only cleaning, build out the universal framework
+	if [ "${UFW_ACTION}" != "clean" ]; then
+		# Copy the iphone framework as a basis for the universal framework
+		UFW_BUILT_FW_DIR="${UFW_BUILD_DIR}/${configuration}-${UFW_PLATFORMS%% *}"
+		UFW_UNIVERSAL_DIR="${UFW_BUILD_DIR}/${configuration}-universal"
 
+		mkdir -p "${UFW_UNIVERSAL_DIR}"
+		if [ "$?" != "0" ]; then echo >&2 "Error: mkdir failed"; exit 1; fi
+		cp -a "${UFW_BUILT_FW_DIR}/${UFW_EXE_FOLDER_PATH}" "${UFW_UNIVERSAL_DIR}/${UFW_EXE_FOLDER_PATH}"
+		if [ "$?" != "0" ]; then echo >&2 "Error: cp failed"; exit 1; fi
 
-# Build all targets
-if [ ${UFW_DO_BUILD} -eq 1 ]; then
-    for UFW_CONFIG in Debug Release; do
-        # Build the framework for all platforms.
-        for UFW_PLATFORM in iphoneos iphonesimulator; do
-            xcodebuild -sdk "${UFW_PLATFORM}${UFW_SDK_VERSION}" -configuration "${UFW_CONFIG}" -target "${UFW_TARGET}" build
-            if [ "$?" != "0" ]; then echo >&2 "xcodebuild failed"; exit 1; fi
-        done
+		# Replace the copied iphone library with a combined universal library
+		unset UFW_EXE_PATHS
+		declare -a UFW_EXE_PATHS
+		for platform in ${UFW_PLATFORMS}; do
+			UFW_EXE_PATHS+=("${UFW_BUILD_DIR}/${configuration}-${platform}/${UFW_EXE_PATH}")
+		done
 
-        UFW_DEVICE_DIR="${BUILD_DIR}/${UFW_CONFIG}-iphoneos"
-        UFW_SIMULATOR_DIR="${BUILD_DIR}/${UFW_CONFIG}-iphonesimulator"
-        UFW_UNIVERSAL_DIR="${BUILD_DIR}/${UFW_CONFIG}-universal"
+		echo "Combining ${UFW_EXE_PATHS[@]} into ${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}"
+		lipo -create -output "${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}" "${UFW_EXE_PATHS[@]}"
+		if [ "$?" != "0" ]; then echo >&2 "Error: lipo failed"; exit 1; fi
+	fi
+done
 
-        # Copy the framework dir from the iphone build.
-        mkdir -p "${UFW_UNIVERSAL_DIR}"
-        if [ "$?" != "0" ]; then echo >&2 "mkdir failed"; exit 1; fi
-        cp -a "${UFW_DEVICE_DIR}/${UFW_EXE_FOLDER_PATH}" "${UFW_UNIVERSAL_DIR}/${UFW_EXE_FOLDER_PATH}"
-        if [ "$?" != "0" ]; then echo >&2 "cp failed"; exit 1; fi
-
-        # Create the universal library over top of the copied one.
-        lipo -create -output "${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}" "${UFW_DEVICE_DIR}/${UFW_EXE_PATH}" "${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}"
-        if [ "$?" != "0" ]; then echo >&2 "lipo failed"; exit 1; fi
-    done
+if [ "${UFW_ACTION}" = "clean" ]; then
+    echo "Frameworks for \"${UFW_TARGET}\" cleaned for configuration(s): ${UFW_CONFIGURATIONS}"
+else
+    echo "Universal framework \"${UFW_TARGET}\" (${UFW_PLATFORMS}) successfully built for configuration(s): ${UFW_CONFIGURATIONS}"
 fi
 
 exit 0

@@ -63,8 +63,6 @@ Step-by-Step Instructions
       **New Copy Headers Build Phase**
 
 6. Copy **UniversalFW.sh** to the root directory of your project (using Finder).
-   UniversalFW.sh supports 3 operations: **clean**, **build**, and **rebuild**
-   (which cleans, then builds).
 
 7. Add **Shell Script Target** to your project:
     - In the menu, go to **Project** -> **New Target**
@@ -73,17 +71,17 @@ Step-by-Step Instructions
     - Expand the target, then double-click on the **Run Script** task.
 	- Put the following into the script:
 
-        sh UniversalFW.sh rebuild <your framework's name>
+        sh UniversalFW.sh -a rebuild <your framework's name>
 
 8. Build the shell script target to make the initial framework structure.
 
-9. Create groups for your debug and release mode frameworks.
+9. (Optional) Create groups for your debug and release mode frameworks.
     - Select your project (in the **Groups & Files** area)
     - In the menu, go to **Project** -> **New Group**
     - Call the group **Debug Framework**
     - Do the same to create **Release Framework**
 
-10. Add the framework structures to your project.
+10. (Optional) Add the framework structures to your project.
     - From **Finder**, open the **build** folder inside your project.
       You should see subfolders **Debug-iphoneos**, **Debug-iphonesimulator**,
       **Debug-universal**, **Release-iphoneos**, **Release-iphonesimulator**,
@@ -114,10 +112,40 @@ And you're done!
 ----------------
 
 You can now drag and drop the release or debug version of your framework from
-XCode into another project. To use headers from your framework, you'll need to
-use the form:
+XCode (or via Finder) into another project. To use headers from your
+framework, use the form:
 
     #import <MyAweseomeFramework/SomeHeader.h>
 
-The included example project demonstrates the different ways in which the
+The included example project demonstrates various ways in which the
 builder script can be used.
+
+
+Caveats:
+--------
+
+I haven't figured out how to make error conditions appear in red in XCode's
+build results page, so some failures (such as with lipo) will appear as
+successful in the build results. Please be sure to check the last line of
+the script's output for a message starting with "Error:"
+
+
+Advanced UniversalFW.sh
+-----------------------
+
+In order to support more complex environments, UniversalFW.sh supports command
+line switches:
+
+    -p <platforms>: Platforms to build
+    -c <configurations>: Configurations to build
+    -a <action>: One of: build, clean, rebuild (or "clean build")
+
+When called with no switches, it defaults to the following:
+
+    -p "iphoneos iphonesimulator" -c "Debug Release" -a build
+
+UniversalFW.sh can also be called from the command line. When called via the
+command line, it will make some assumptions:
+
+* The build directory is assumed to be "build" under the project root.
+* It builds using the latest iphone SDK.

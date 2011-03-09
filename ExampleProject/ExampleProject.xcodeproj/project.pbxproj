@@ -214,7 +214,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\nsh UniversalFW.sh build Example\n\nexit 0";
+			shellScript = "# shell script goes here\n\nsh UniversalFW.sh Example\n\nexit 0";
 		};
 		395C7A791321EC4F00BCFBFC /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -227,7 +227,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\nsh UniversalFW.sh clean Example\n\nexit 0";
+			shellScript = "# shell script goes here\n\nsh UniversalFW.sh -a clean Example\n\nexit 0";
 		};
 		395C7A811321ED6800BCFBFC /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -240,7 +240,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# shell script goes here\n\nsh UniversalFW.sh rebuild Example\n\nexit 0";
+			shellScript = "# shell script goes here\n\nsh UniversalFW.sh -a rebuild Example\n\nexit 0";
 		};
 /* End PBXShellScriptBuildPhase section */
 
