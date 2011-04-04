@@ -104,10 +104,6 @@
 					<string>Resources</string>
 				</dict>
 			</array>
-			<key>OtherFrameworks</key>
-			<array>
-				<string>Foundation</string>
-			</array>
 			<key>ProductType</key>
 			<string>com.apple.product-type.bundle</string>
 			<key>SharedSettings</key>
@@ -191,9 +187,9 @@ UFW_UNIVERSAL_DIR=&quot;${UFW_BUILD_DIR}/Release-universal&quot;
 
 rm -rf &quot;${UFW_UNIVERSAL_DIR}&quot;
 
-xcodebuild -target ${UFW_TARGET} -configuration Release -sdk iphoneos${UFW_SDK_VERSION} clean build
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration Release -sdk iphoneos${UFW_SDK_VERSION} clean build
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
-xcodebuild -target ${UFW_TARGET} -configuration Release -sdk iphonesimulator${UFW_SDK_VERSION} clean build
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration Release -sdk iphonesimulator${UFW_SDK_VERSION} clean build
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
 
 mkdir -p &quot;${UFW_UNIVERSAL_DIR}&quot;
