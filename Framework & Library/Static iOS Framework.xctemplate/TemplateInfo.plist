@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Ancestors</key>
+	<array>
+		<string>com.apple.dt.unit.base</string>
+		<string>com.apple.dt.unit.iPhoneBase</string>
+	</array>
+	<key>Concrete</key>
+	<true/>
+	<key>Definitions</key>
+	<dict>
+		<key>___PACKAGENAME___-Prefix.pch:objC:importFoundation</key>
+		<string>#import &lt;Foundation/Foundation.h&gt;
+</string>
+<key>___PACKAGENAME___-Info.plist:iosStaticFramework</key>
+                <string>&lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
+&lt;string&gt;English&lt;/string&gt;
+&lt;key&gt;CFBundleExecutable&lt;/key&gt;
+&lt;string&gt;${EXECUTABLE_NAME}&lt;/string&gt;
+&lt;key&gt;CFBundleName&lt;/key&gt;
+&lt;string&gt;${PRODUCT_NAME}&lt;/string&gt;
+&lt;key&gt;CFBundleIconFile&lt;/key&gt;
+&lt;string&gt;&lt;/string&gt;
+&lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
+&lt;string&gt;6.0&lt;/string&gt;
+&lt;key&gt;CFBundlePackageType&lt;/key&gt;
+&lt;string&gt;FMWK&lt;/string&gt;
+&lt;key&gt;CFBundleSignature&lt;/key&gt;
+&lt;string&gt;????&lt;/string&gt;
+&lt;key&gt;CFBundleVersion&lt;/key&gt;
+&lt;string&gt;1&lt;/string&gt;
+&lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
+&lt;string&gt;1.0&lt;/string&gt;
+&lt;key&gt;NSPrincipalClass&lt;/key&gt;
+&lt;string&gt;&lt;/string&gt;
+</string>
+	</dict>
+	<key>Description</key>
+	<string>This template builds a static iOS framework. Building "Universal Framework" will produce "build/Release-universal/&lt;your framework&gt;" in your project folder.</string>
+	<key>Identifier</key>
+	<string>org.stenerud.iosStaticFramework</string>
+	<key>Kind</key>
+	<string>Xcode.Xcode3.ProjectTemplateUnitKind</string>
+	<key>Nodes</key>
+	<array>
+	<string>___PACKAGENAME___-Info.plist:iosStaticFramework</string>
+	<string>___PACKAGENAME___-Info.plist:NSHumanReadableCopyright</string>
+	</array>
+	<key>Options</key>
+	<array>
+		<dict>
+			<key>Default</key>
+			<string>true</string>
+			<key>Description</key>
+			<string>Indicates whether a unit test bundle should be created.</string>
+			<key>Identifier</key>
+			<string>includeUnitTests</string>
+			<key>Name</key>
+			<string>Include Unit Tests</string>
+			<key>SortOrder</key>
+			<integer>1</integer>
+			<key>Type</key>
+			<string>checkbox</string>
+			<key>Units</key>
+			<dict>
+				<key>true</key>
+				<array>
+					<dict>
+						<key>Components</key>
+						<array>
+							<dict>
+								<key>Identifier</key>
+								<string>com.apple.dt.unit.cocoaTouchFrameworkUnitTestBundle</string>
+								<key>Name</key>
+								<string>___PACKAGENAME___Tests</string>
+							</dict>
+						</array>
+					</dict>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>Targets</key>
+	<array>
+ 		<dict>
+			<key>BuildPhases</key>
+			<array>
+				<dict>
+					<key>Class</key>
+					<string>Sources</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Frameworks</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Headers</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Resources</string>
+				</dict>
+			</array>
+			<key>OtherFrameworks</key>
+			<array>
+				<string>Foundation</string>
+			</array>
+			<key>ProductType</key>
+			<string>com.apple.product-type.bundle</string>
+			<key>SharedSettings</key>
+			<dict>
+				<key>PRODUCT_NAME</key>
+				<string>$(TARGET_NAME)</string>
+				<key>DEAD_CODE_STRIPPING</key>
+				<string>NO</string>
+				<key>MACH_O_TYPE</key>
+				<string>mh_object</string>
+				<key>LINK_WITH_STANDARD_LIBRARIES</key>
+				<string>NO</string>
+				<key>WRAPPER_EXTENSION</key>
+				<string>framework</string>
+				<key>FRAMEWORK_VERSION</key>
+				<string>A</string>
+				<key>DYLIB_COMPATIBILITY_VERSION</key>
+				<string>1</string>
+				<key>DYLIB_CURRENT_VERSION</key>
+				<string>1</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Name</key>
+			<string>Universal_Framework</string>
+			<key>TargetType</key>
+			<string>Aggregate</string>
+			<key>SharedSettings</key>
+			<dict>
+				<key>PRODUCT_NAME</key>
+				<string>UniversalFramework</string>
+			</dict>
+			<key>BuildPhases</key>
+			<array>
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShellScript</key>
+					<string># Config
+
+UFW_TARGET=${PROJECT}
+
+
+
+# Defaults
+
+# Default build dir
+UFW_BUILD_DIR=&quot;./build&quot;
+
+
+
+# Global vars
+
+#if [ ! -z ${BUILD_DIR} ]; then
+## Use the build dir specified by XCode
+#    UFW_BUILD_DIR=&quot;${BUILD_DIR}&quot;
+#fi
+
+if [ -z ${SDK_NAME} ]; then
+    # Use the latest iphoneos SDK available
+    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o &quot;iphoneos.*$&quot;)
+    while read -r line; do
+    UFW_SDK_VERSION=&quot;${line}&quot;
+    done &lt;&lt;&lt; &quot;${UFW_GREP_RESULT}&quot;
+else
+    # Use the SDK specified by XCode
+    UFW_SDK_VERSION=&quot;${SDK_NAME}&quot;
+fi
+
+UFW_SDK_VERSION=$(echo &quot;${UFW_SDK_VERSION}&quot; | grep -o &quot;[0-9].*$&quot;)
+UFW_EXE_FOLDER_PATH=&quot;${UFW_TARGET}.framework&quot;
+UFW_EXE_PATH=&quot;${UFW_EXE_FOLDER_PATH}/${UFW_TARGET}&quot;
+UFW_IPHONE_DIR=&quot;${UFW_BUILD_DIR}/Release-iphoneos&quot;
+UFW_SIMULATOR_DIR=&quot;${UFW_BUILD_DIR}/Release-iphonesimulator&quot;
+UFW_UNIVERSAL_DIR=&quot;${UFW_BUILD_DIR}/Release-universal&quot;
+
+
+# Build Framework
+
+rm -rf &quot;${UFW_UNIVERSAL_DIR}&quot;
+
+xcodebuild -target ${UFW_TARGET} -configuration Release -sdk iphoneos${UFW_SDK_VERSION} clean build
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
+xcodebuild -target ${UFW_TARGET} -configuration Release -sdk iphonesimulator${UFW_SDK_VERSION} clean build
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
+
+mkdir -p &quot;${UFW_UNIVERSAL_DIR}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+
+cp -a &quot;${UFW_IPHONE_DIR}/${UFW_EXE_FOLDER_PATH}&quot; &quot;${UFW_UNIVERSAL_DIR}/${UFW_EXE_FOLDER_PATH}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp failed&quot;; exit 1; fi
+
+lipo -create -output &quot;${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: lipo failed&quot;; exit 1; fi
+
+					</string>
+                </dict>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
