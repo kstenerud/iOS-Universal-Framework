@@ -26,7 +26,8 @@ right magical incantations. This project template provides that magic.
 Installing the Template
 -----------------------
 
-Just copy **Static iOS Framework.xctemplate** to your XCode templates folder
+Just copy **Static iOS Framework.xctemplate** and
+**Static iOS Framework Test.xctemplate** to your XCode templates folder
 **~/Library/Developer/Xcode/Templates/Framework & Library** (create the folder
 if it doesn't exist yet).
 

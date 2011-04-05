@@ -72,7 +72,7 @@
 						<array>
 							<dict>
 								<key>Identifier</key>
-								<string>com.apple.dt.unit.cocoaTouchFrameworkUnitTestBundle</string>
+								<string>org.stenerud.iosStaticFrameworkTests</string>
 								<key>Name</key>
 								<string>___PACKAGENAME___Tests</string>
 							</dict>
@@ -103,6 +103,15 @@
 					<key>Class</key>
 					<string>Resources</string>
 				</dict>
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShellScript</key>
+					<string>cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+					</string>
+                </dict>
 			</array>
 			<key>ProductType</key>
 			<string>com.apple.product-type.bundle</string>
