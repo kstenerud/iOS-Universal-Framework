@@ -109,7 +109,9 @@
 					<key>ShellPath</key>
 					<string>/bin/sh</string>
 					<key>ShellScript</key>
-					<string>cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+					<string>
+rm -f &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
 					</string>
                 </dict>
 			</array>
