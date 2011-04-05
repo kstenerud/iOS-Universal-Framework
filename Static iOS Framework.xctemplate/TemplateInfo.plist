@@ -111,7 +111,9 @@
 					<key>ShellScript</key>
 					<string>
 rm -f &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
-cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+if [ -f &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; ]; then
+	cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+fi
 					</string>
                 </dict>
 			</array>
@@ -155,7 +157,8 @@ cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATI
 					<key>ShellPath</key>
 					<string>/bin/sh</string>
 					<key>ShellScript</key>
-					<string># Config
+					<string>
+# Config
 
 UFW_TARGET=${PROJECT}
 
@@ -211,7 +214,6 @@ if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp fai
 
 lipo -create -output &quot;${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}&quot;
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: lipo failed&quot;; exit 1; fi
-
 					</string>
                 </dict>
 			</array>

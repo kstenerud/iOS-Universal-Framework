@@ -81,3 +81,30 @@ syntax rather than quotes.
 For example, with framework "MyFramework":
 
     #import <MyFramework/MyClass.h>
+
+
+Known Issues
+------------
+
+### Linker Warnings ###
+
+The first time you build your framework target (not the Universal_Framework
+target), XCode may complain about missing folders during the linking phase:
+
+    ld: warning: directory not found for option
+    '-L/Users/myself/Library/Developer/Xcode/DerivedData/MyFramework-ccahfoccjqiognaqraesrxdyqcne/Build/Products/Debug-iphoneos'
+
+If this happens, simply clean and rebuild the target and the warnings should
+go away.
+
+
+### The selected run destination is not valid for this action ###
+
+Sometimes Xcode doesn't construct the project properly, and so when you
+attempt to build, it will bring up this error. As a preventative measure,
+try building your framework immedeately after creating it. If you get this
+error, Xcode built the project incorrectly.
+
+If Xcode builds a bad project, you'll have to delete the project and start a
+new one. This error only occurs during the initial construction of the project
+file.
