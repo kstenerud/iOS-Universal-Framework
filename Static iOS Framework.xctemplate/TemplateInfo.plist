@@ -137,6 +137,12 @@ fi
 				<string>1</string>
 				<key>DYLIB_CURRENT_VERSION</key>
 				<string>1</string>
+				<key>GCC_PRECOMPILE_PREFIX_HEADER</key>
+				<string>YES</string>
+				<key>GCC_PREFIX_HEADER</key>
+				<string>___PACKAGENAME___/___PACKAGENAME___-Prefix.pch</string>
+				<key>OTHER_LDFLAGS</key>
+				<string>-ObjC</string>
 			</dict>
 		</dict>
 		<dict>
