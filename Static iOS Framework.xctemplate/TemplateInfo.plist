@@ -212,6 +212,11 @@ if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodeb
 xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration Release -sdk iphonesimulator${UFW_SDK_VERSION} clean build
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
 
+if [ ! -f &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; ]; then
+    echo &quot;Framework target \&quot;${UFW_TARGET}\&quot; had no source files to build from. Make sure your source files have the correct target membership&quot;
+    exit 1
+fi
+
 mkdir -p &quot;${UFW_UNIVERSAL_DIR}&quot;
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
 
