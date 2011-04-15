@@ -4,7 +4,7 @@ iOS Universal Framework
 An XCode 4 project template to build universal (arm6, arm7, and simulator)
 frameworks for iOS.
 
-![screenshot](screenshot.png)
+![screenshot](https://github.com/kstenerud/iOS-Universal-Framework/raw/master/screenshot.png)
 
 By Karl Stenerud
 
