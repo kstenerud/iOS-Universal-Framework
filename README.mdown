@@ -1,5 +1,5 @@
-iOS Universal Framework
-=======================
+iOS Universal Framework Mk 3
+============================
 
 An XCode 4 project template to build universal (arm6, arm7, and simulator)
 frameworks for iOS.
@@ -28,10 +28,9 @@ right magical incantations. This project template provides that magic.
 Installing the Template
 -----------------------
 
-Just copy **Static iOS Framework.xctemplate** and
-**Static iOS Framework Test.xctemplate** to your XCode templates folder
-**~/Library/Developer/Xcode/Templates/Framework & Library** (create the folder
-if it doesn't exist yet).
+To install, run the install.sh script.
+
+(To uninstall, run the uninstall.sh script)
 
 Now restart Xcode and you'll see **Static iOS Framework** under
 **Framework & Library** when creating a new project.
@@ -88,6 +87,15 @@ For example, with framework "MyFramework":
 Known Issues
 ------------
 
+### Resources ###
+
+Although the project will allow you to add resources, and will copy them into
+your framework, Xcode unfortunately doesn't recognize resources within a
+static framework when you add it to a project (Mac OS X static frameworks have
+the same issue).
+If anyone can figure out how to make it work, please let me know!
+
+
 ### Linker Warnings ###
 
 The first time you build your framework target (not the Universal_Framework
@@ -102,14 +110,37 @@ go away.
 
 ### The selected run destination is not valid for this action ###
 
-Sometimes Xcode doesn't construct the project properly, and so when you
-attempt to build, it will bring up this error. As a preventative measure,
-try building your framework immedeately after creating it. If you get this
-error, Xcode built the project incorrectly.
+Sometimes Xcode gets confused and loads the wrong active settings.
+The first thing to try is restarting Xcode. If it still fails, Xcode generated
+a bad project (this can happen on any kind of project). you'll need to start
+over and create a new project.
 
-If Xcode builds a bad project, you'll have to delete the project and start a
-new one. This error only occurs during the initial construction of the project
-file.
+
+History
+-------
+
+### Mk 1
+
+The first incarnation. It used a bunch of script hackery to cobble together a
+fake framework. It exploited the "bundle" target, setting its type to a
+relocatable object file.
+
+
+### Mk 2
+
+This version took advantage of the template system to do most of the work
+that the script used to do. Everything (including the script) was embedded
+in the template.
+
+
+### Mk 3
+
+This version does away with the "relocatable object" hackery and builds a true
+static framework, with all the abilities of an OS X static framework.
+This solves a number of linker, unit testing, and workspace inclusion issues
+that plagued the previous hacky implementations.
+It requires some small modifications to Xcode files, and so comes with an
+install and uninstall script.
 
 
 License
