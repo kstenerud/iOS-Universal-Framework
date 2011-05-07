@@ -33,7 +33,7 @@
 				<key>DYLIB_CURRENT_VERSION</key>
 				<string>1</string>
 				<key>SKIP_INSTALL</key>
-				<string>1</string>
+				<string>YES</string>
 			</dict>
 			<key>BuildPhases</key>
 			<array>
