@@ -32,6 +32,8 @@
 				<string>1</string>
 				<key>DYLIB_CURRENT_VERSION</key>
 				<string>1</string>
+				<key>SKIP_INSTALL</key>
+				<string>1</string>
 			</dict>
 			<key>BuildPhases</key>
 			<array>
@@ -87,16 +89,8 @@ UFW_TARGET=${PROJECT}
 # Defaults
 
 # Default build dir
-UFW_BUILD_DIR=&quot;./build&quot;
+UFW_BUILD_DIR=${BUILD_DIR}
 
-
-
-# Global vars
-
-#if [ ! -z ${BUILD_DIR} ]; then
-## Use the build dir specified by XCode
-#    UFW_BUILD_DIR=&quot;${BUILD_DIR}&quot;
-#fi
 
 if [ -z ${SDK_NAME} ]; then
     # Use the latest iphoneos SDK available
@@ -112,18 +106,18 @@ fi
 UFW_SDK_VERSION=$(echo &quot;${UFW_SDK_VERSION}&quot; | grep -o &quot;[0-9].*$&quot;)
 UFW_EXE_FOLDER_PATH=&quot;${UFW_TARGET}.framework&quot;
 UFW_EXE_PATH=&quot;${UFW_EXE_FOLDER_PATH}/Versions/Current/${UFW_TARGET}&quot;
-UFW_IPHONE_DIR=&quot;${UFW_BUILD_DIR}/Release-iphoneos&quot;
-UFW_SIMULATOR_DIR=&quot;${UFW_BUILD_DIR}/Release-iphonesimulator&quot;
-UFW_UNIVERSAL_DIR=&quot;${UFW_BUILD_DIR}/Release-universal&quot;
+UFW_IPHONE_DIR=&quot;${UFW_BUILD_DIR}/${CONFIGURATION}-iphoneos&quot;
+UFW_SIMULATOR_DIR=&quot;${UFW_BUILD_DIR}/${CONFIGURATION}-iphonesimulator&quot;
+UFW_UNIVERSAL_DIR=&quot;${UFW_BUILD_DIR}/${CONFIGURATION}-universal&quot;
 
 
 # Build Framework
 
 rm -rf &quot;${UFW_UNIVERSAL_DIR}&quot;
 
-xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration Release -sdk iphoneos${UFW_SDK_VERSION} clean build
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphoneos${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
-xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration Release -sdk iphonesimulator${UFW_SDK_VERSION} clean build
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphonesimulator${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
 if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
 
 if [ ! -f &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; ]; then
