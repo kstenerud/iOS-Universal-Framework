@@ -21,19 +21,37 @@ that follow a standard structure to include everything required to use a
 library. Unfortunately, in disallowing dynamically linked libraries in iOS,
 Apple also removed iOS framework creation functionality in XCode.
 
-It is, however, possible to make a **statically linked** framework with the
-right magical incantations. This project template provides that magic.
+Xcode is still technically capable of building frameworks for iOS, and with a
+little tweaking it can be re-enabled.
 
 
-Installing the Template
------------------------
+Kinds of Frameworks
+-------------------
 
-To install, run the install.sh script.
+The most common kind of framework is the **dynamically linked framework**. Only
+Apple can install these on an iOS device, so there's no point in building them.
 
-(To uninstall, run the uninstall.sh script)
+A **statically linked framework** is almost the same, except it gets linked
+to your binary at compile time, so there's no problem using them.
+
+An **embedded framework** is a wrapper around a static framework, designed to
+trick Xcode into seeing the framework's resources (images, plists, nibs, etc).
+
+This template system will build **static frameworks** and
+**embedded frameworks**.
+
+
+Installing the Template System
+------------------------------
+
+To install, run the **install.sh** script.
 
 Now restart Xcode and you'll see **Static iOS Framework** under
 **Framework & Library** when creating a new project.
+
+To uninstall, run the **uninstall.sh** script and restart Xcode.
+
+
 
 
 Creating an iOS Framework Project
@@ -51,7 +69,8 @@ Creating an iOS Framework Project
 5. Any header files that need to be available to other projects must be
    declared public. To do so, go to **Build Phases** in your framework
    target, expand **Copy Headers**, then drag any header files you want to
-   make public from the **Project** section to the **Public** section.
+   make public from the **Project** or **Private** section to the **Public**
+   section.
 
 
 Building your iOS Framework
@@ -62,18 +81,23 @@ Building your iOS Framework
 2. Build. It will build the framework for arm6, arm7, and simulator, then merge
    them together into a universal framework.
 
-The finished product will be in your project directory under
-**build/Release-universal/(your framework).framework**
+The finished product will be in your standard build location as
+**(configuration)-universal/(your framework).framework**.
+The "Run" build configuration in the "Universal_Framework" scheme controls which
+configuration to build the universal framework from.
 
-It builds in this folder because the command line xcodebuild doesn't use the
-new derived data folder that XCode 4 uses.
+It will also build **(your framework).embeddedframework**.
+This contains the normal framework, but also contains an extra
+reference to any resources included in your project. XCode won't look inside
+static frameworks for resources, so if you're going to include resources, you
+must distribute the embeddedframework version.
 
 
 Using an iOS Framework
 ----------------------
 
-iOS frameworks are basically the same as Mac OS X frameworks, except they are
-statically linked.
+iOS frameworks are basically the same as regular dynamic Mac OS X frameworks,
+except they are statically linked.
 
 To add a framework to your project, simply drag it into your project.
 When including headers from your framework, remember to use angle bracket
@@ -84,16 +108,36 @@ For example, with framework "MyFramework":
     #import <MyFramework/MyClass.h>
 
 
-Known Issues
-------------
+Troubleshooting
+---------------
 
-### Resources ###
+### Headers Not Found ###
 
-Although the project will allow you to add resources, and will copy them into
-your framework, Xcode unfortunately doesn't recognize resources within a
-static framework when you add it to a project (Mac OS X static frameworks have
-the same issue).
-If anyone can figure out how to make it work, please let me know!
+If Xcode can't find the header files from your framework, you've likely
+forgotten to make them public. See step 5 in **Creating an iOS Framework Project**
+
+
+### No Such Product Type ###
+
+If someone who has not installed iOS Universal Framework in their development
+environment attempts to build a universal framework project, they'll get the
+following error:
+
+    target specifies product type 'com.apple.product-type.framework.static',
+    but there's no such product type for the 'iphonesimulator' platform
+
+Xcode requires some modification in order to be able to build true iOS static
+frameworks (see the diff files for details), so please install it on all
+development machines that will build your static framework projects (this
+isn't needed for users of your framework, only for builders of the framework).
+
+
+### The selected run destination is not valid for this action ###
+
+Sometimes Xcode gets confused and loads the wrong active settings. The first
+thing to try is restarting Xcode. If it still fails, Xcode generated a bad
+project (this can happen with any kind of project due to a bug in Xcode 4).
+If this happens, you'll need to start over and create a new project.
 
 
 ### Linker Warnings ###
@@ -106,14 +150,6 @@ target), XCode may complain about missing folders during the linking phase:
 
 If this happens, simply clean and rebuild the target and the warnings should
 go away.
-
-
-### The selected run destination is not valid for this action ###
-
-Sometimes Xcode gets confused and loads the wrong active settings.
-The first thing to try is restarting Xcode. If it still fails, Xcode generated
-a bad project (this can happen on any kind of project). you'll need to start
-over and create a new project.
 
 
 History
@@ -139,8 +175,17 @@ This version does away with the "relocatable object" hackery and builds a true
 static framework, with all the abilities of an OS X static framework.
 This solves a number of linker, unit testing, and workspace inclusion issues
 that plagued the previous hacky implementations.
-It requires some small modifications to Xcode files, and so comes with an
-install and uninstall script.
+
+It also includes the concept of the embeddedframework, which allows you to
+include resources with your framework in a way that Xcode understands.
+
+Josh Weinberg also added some tweaks to make it build in the proper build
+directory with scheme-controlled configuration, and behave better as a
+subproject dependency.
+
+It now requires some small modifications to Xcode's specification files in
+order to support true static frameworks, and thus comes with an install and
+uninstall script.
 
 
 License
