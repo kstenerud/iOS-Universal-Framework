@@ -19,7 +19,7 @@ resources, scripts etc.
 Apple's solution to this problem is frameworks, which are basically folders
 that follow a standard structure to include everything required to use a
 library. Unfortunately, in disallowing dynamically linked libraries in iOS,
-Apple also removed iOS framework creation functionality in XCode.
+Apple also removed static iOS framework creation functionality in XCode.
 
 Xcode is still technically capable of building frameworks for iOS, and with a
 little tweaking it can be re-enabled.
@@ -34,20 +34,59 @@ Apple can install these on an iOS device, so there's no point in building them.
 A **statically linked framework** is almost the same, except it gets linked
 to your binary at compile time, so there's no problem using them.
 
+A **fake framework** is the result of a hack upon a bundle target in Xcode and
+some scripting magic. It looks and behaves like a static framework, but it's
+implemented as a relocatable object rather than a static library.
+
 An **embedded framework** is a wrapper around a static framework, designed to
 trick Xcode into seeing the framework's resources (images, plists, nibs, etc).
 
-This template system will build **static frameworks** and
-**embedded frameworks**.
+These template systems will build **static frameworks**, **fake frameworks**,
+and **embedded frameworks**.
+
+
+Choosing Which Template System to Use
+-------------------------------------
+
+In this distribution are two template systems, each with their strengths and
+weaknesses. You should choose whichever one best suits your needs and
+constraints (you could even install both if you wanted).
+
+### Fake Framework ###
+
+The fake framework uses the "relocatable object file" bundle hack that's been
+posted all over the net, which tricks Xcode into building something that mostly
+resembles a static framework.
+
+The binary it outputs is an object file rather than a static library, which
+means that it's technically not a real framework. However, so far it's worked
+fine for everything I've tried it on. So the downside is the uncertainty of
+the hack.
+
+### Real Framework ###
+
+The real framework is real in every sense of the word. It is a true static
+framework made by re-introducing specifications that Apple left out of Xcode.
+
+The downside is that in order for this to work, you must modify Xcode's
+specification files, which may not be desirable, or even possible due to
+restrictions your organization may place upon development environments.
+Also, if you are releasing a project that builds a real framework, anyone
+who wishes to build that framework must modify their Xcode as well (via the
+install script in this distribution).
+
+I've submitted a rdar report to Apple in the hopes that they'll update the
+specification files in Xcode, but that could take awhile.
 
 
 Installing the Template System
 ------------------------------
 
-To install, run the **install.sh** script.
+To install, run the **install.sh** script in either the "Real Framework" or
+"Fake Framework" dir (or both).
 
-Now restart Xcode and you'll see **Static iOS Framework** under
-**Framework & Library** when creating a new project.
+Now restart Xcode and you'll see **Static iOS Framework** (or **Fake Static
+iOS Framework**) under **Framework & Library** when creating a new project.
 
 To uninstall, run the **uninstall.sh** script and restart Xcode.
 
@@ -120,15 +159,15 @@ forgotten to make them public. See step 5 in **Creating an iOS Framework Project
 ### No Such Product Type ###
 
 If someone who has not installed iOS Universal Framework in their development
-environment attempts to build a universal framework project, they'll get the
-following error:
+environment attempts to build a universal framework project (for a real
+framework), they'll get the following error:
 
     target specifies product type 'com.apple.product-type.framework.static',
     but there's no such product type for the 'iphonesimulator' platform
 
 Xcode requires some modification in order to be able to build true iOS static
 frameworks (see the diff files for details), so please install it on all
-development machines that will build your static framework projects (this
+development machines that will build your real static framework projects (this
 isn't needed for users of your framework, only for builders of the framework).
 
 
@@ -186,6 +225,17 @@ subproject dependency.
 It now requires some small modifications to Xcode's specification files in
 order to support true static frameworks, and thus comes with an install and
 uninstall script.
+
+
+### Mk 4
+
+This version gives you the choice of installing the "real framework" template
+or the "fake framework" template. Both come with an install script, but only
+the "real framework" installer needs to modify Xcode.
+
+This also fixes some issues that the fake framework had in Mk 2 (such as
+the curious behavior of embedding the full path to the compiled files within
+the files themselves, resulting in warnings when building with that framework).
 
 
 License

@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Kind</key>
+	<string>Xcode.Xcode3.ProjectTemplateUnitKind</string>
+	<key>Identifier</key>
+	<string>org.stenerud.fakeIosStaticFramework</string>
+	<key>Concrete</key>
+	<true/>
+	<key>Description</key>
+	<string>This template builds a "fake" static iOS framework. Building "Universal Framework" will produce "&lt;configuration&gt;-universal/&lt;your framework&gt;" in your build folder.</string>
+	<key>SortOrder</key>
+	<integer>5</integer>
+	<key>Ancestors</key>
+	<array>
+		<string>com.apple.dt.unit.bundleBase</string>
+		<string>com.apple.dt.unit.iPhoneBase</string>
+	</array>
+	<key>Targets</key>
+	<array>
+		<dict>
+			<key>ProductType</key>
+			<string>com.apple.product-type.bundle</string>
+			<key>SharedSettings</key>
+			<dict>
+				<key>WRAPPER_EXTENSION</key>
+				<string>framework</string>
+				<key>FRAMEWORK_VERSION</key>
+				<string>A</string>
+				<key>DYLIB_COMPATIBILITY_VERSION</key>
+				<string>1</string>
+				<key>DYLIB_CURRENT_VERSION</key>
+				<string>1</string>
+				<key>SKIP_INSTALL</key>
+				<string>YES</string>
+				<key>MACH_O_TYPE</key>
+				<string>mh_object</string>
+				<key>DEAD_CODE_STRIPPING</key>
+				<string>NO</string>
+				<key>LINK_WITH_STANDARD_LIBRARIES</key>
+				<string>NO</string>
+				<key>OTHER_LDFLAGS</key>
+				<string>-ObjC</string>
+				<key>INSTALL_PATH</key>
+				<string>$(BUILT_PRODUCTS_DIR)</string>
+			</dict>
+			<key>BuildPhases</key>
+			<array>
+				<dict>
+					<key>Class</key>
+					<string>Sources</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Frameworks</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Headers</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>Resources</string>
+				</dict>
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShellScript</key>
+					<string>
+rm -f &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+if [ -f &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; ]; then
+	cp &quot;${CONFIGURATION_BUILD_DIR}/${EXECUTABLE_PATH}&quot; &quot;${CONFIGURATION_BUILD_DIR}/FakeFramework&quot;
+fi
+					</string>
+                </dict>
+			</array>
+		</dict>
+		<dict>
+			<key>Name</key>
+			<string>Universal_Framework</string>
+			<key>TargetType</key>
+			<string>Aggregate</string>
+			<key>SharedSettings</key>
+			<dict>
+				<key>PRODUCT_NAME</key>
+				<string>UniversalFramework</string>
+			</dict>
+			<key>BuildPhases</key>
+			<array>
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShellScript</key>
+					<string>
+# Assume the target name is the same as the project name
+UFW_TARGET=${PROJECT}
+
+if [ -z ${SDK_NAME} ]; then
+    # Use the latest iphoneos SDK available
+    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o &quot;iphoneos.*$&quot;)
+    while read -r line; do
+        UFW_SDK_VERSION=&quot;${line}&quot;
+    done &lt;&lt;&lt; &quot;${UFW_GREP_RESULT}&quot;
+else
+    # Use the SDK specified by XCode
+    UFW_SDK_VERSION=&quot;${SDK_NAME}&quot;
+fi
+
+UFW_SDK_VERSION=$(echo &quot;${UFW_SDK_VERSION}&quot; | grep -o &quot;[0-9].*$&quot;)
+UFW_FMWK_DIRNAME=&quot;${UFW_TARGET}.framework&quot;
+UFW_EMBEDDED_DIRNAME=&quot;${UFW_TARGET}.embeddedframework&quot;
+UFW_EXE_PATH=&quot;${UFW_FMWK_DIRNAME}/${UFW_TARGET}&quot;
+UFW_IPHONE_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-iphoneos&quot;
+UFW_SIMULATOR_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-iphonesimulator&quot;
+UFW_UNIVERSAL_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-universal&quot;
+
+
+# Build Framework
+
+rm -rf &quot;${UFW_UNIVERSAL_DIR}&quot;
+
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphoneos${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
+xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphonesimulator${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
+
+if [ ! -f &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; ]; then
+echo &quot;Framework target \&quot;${UFW_TARGET}\&quot; had no source files to build from. Make sure your source files have the correct target membership&quot;
+exit 1
+fi
+
+mkdir -p &quot;${UFW_UNIVERSAL_DIR}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+
+cp -a &quot;${UFW_IPHONE_DIR}/${UFW_FMWK_DIRNAME}&quot; &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp failed&quot;; exit 1; fi
+
+lipo -create -output &quot;${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: lipo failed&quot;; exit 1; fi
+
+
+# Build standard framework structure
+
+mkdir -p &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}/Versions/A/Resources&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+
+cd &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
+
+mv &quot;${UFW_TARGET}&quot; &quot;Versions/A/&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mv failed&quot;; exit 1; fi
+
+mkdir -p Headers
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+
+mv &quot;Headers&quot; &quot;Versions/A/&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mv failed&quot;; exit 1; fi
+
+UFW_RESOURCE_LIST=$(ls)
+while read -r filename; do
+    if [ &quot;${filename}&quot; != &quot;Versions&quot; ]; then
+        mv &quot;${filename}&quot; &quot;Versions/A/Resources/&quot;
+        if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mv failed&quot;; exit 1; fi
+    fi
+done &lt;&lt;&lt; &quot;${UFW_RESOURCE_LIST}&quot;
+
+cd Versions
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
+
+ln -s A Current
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: ln failed&quot;; exit 1; fi
+
+cd ..
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
+
+ln -s &quot;Versions/Current/${UFW_TARGET}&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: ln failed&quot;; exit 1; fi
+
+ln -s &quot;Versions/Current/Headers&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: ln failed&quot;; exit 1; fi
+
+ln -s &quot;Versions/Current/Resources&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: ln failed&quot;; exit 1; fi
+
+
+# Build Embedded Framework
+
+mkdir -p &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+
+cp -a &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}&quot; &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp failed&quot;; exit 1; fi
+
+cd &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}/Resources&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
+
+UFW_RESOURCE_LIST=$(ls)
+
+cd &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources&quot;
+if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
+
+while read -r filename; do
+    if [ &quot;${filename}&quot; != &quot;Info.plist&quot; ]; then
+        ln -s &quot;../${UFW_FMWK_DIRNAME}/Resources/${filename}&quot;
+        if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: link failed&quot;; exit 1; fi
+    fi
+done &lt;&lt;&lt; &quot;${UFW_RESOURCE_LIST}&quot;
+					</string>
+                </dict>
+			</array>
+		</dict>
+	</array>
+	<key>Options</key>
+	<array>
+		<dict>
+			<key>Identifier</key>
+			<string>includeUnitTests</string>
+			<key>Name</key>
+			<string>Include Unit Tests</string>
+			<key>Description</key>
+			<string>Indicates whether a unit test bundle should be created.</string>
+			<key>Type</key>
+			<string>checkbox</string>
+			<key>SortOrder</key>
+			<integer>1</integer>
+			<key>Default</key>
+			<string>true</string>
+			<key>Units</key>
+			<dict>
+				<key>true</key>
+				<array>
+					<dict>
+						<key>Components</key>
+						<array>
+							<dict>
+								<key>Identifier</key>
+								<string>org.stenerud.iosFakeStaticFrameworkUnitTestBundle</string>
+								<key>Name</key>
+								<string>___PACKAGENAME___Tests</string>
+							</dict>
+						</array>
+					</dict>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>Nodes</key>
+	<array>
+		<string>___PACKAGENAME___-Prefix.pch:objC:importFoundation</string>
+		<string>___PACKAGENAME___-Info.plist:fakeIosStaticFramework</string>
+		<string>___PACKAGENAME___-Info.plist:NSHumanReadableCopyright</string>
+	</array>
+	<key>Definitions</key>
+	<dict>
+		<key>___PACKAGENAME___-Info.plist:fakeIosStaticFramework</key>
+		<string>&lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
+&lt;string&gt;English&lt;/string&gt;
+&lt;key&gt;CFBundleExecutable&lt;/key&gt;
+&lt;string&gt;${EXECUTABLE_NAME}&lt;/string&gt;
+&lt;key&gt;CFBundleName&lt;/key&gt;
+&lt;string&gt;${PRODUCT_NAME}&lt;/string&gt;
+&lt;key&gt;CFBundleIconFile&lt;/key&gt;
+&lt;string&gt;&lt;/string&gt;
+&lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
+&lt;string&gt;6.0&lt;/string&gt;
+&lt;key&gt;CFBundlePackageType&lt;/key&gt;
+&lt;string&gt;FMWK&lt;/string&gt;
+&lt;key&gt;CFBundleSignature&lt;/key&gt;
+&lt;string&gt;????&lt;/string&gt;
+&lt;key&gt;CFBundleVersion&lt;/key&gt;
+&lt;string&gt;1&lt;/string&gt;
+&lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
+&lt;string&gt;1.0&lt;/string&gt;
+&lt;key&gt;NSPrincipalClass&lt;/key&gt;
+&lt;string&gt;&lt;/string&gt;
+</string>
+	</dict>
+</dict>
+</plist>
