@@ -1,4 +1,4 @@
-iOS Universal Framework Mk 3
+iOS Universal Framework Mk 4
 ============================
 
 An XCode 4 project template to build universal (arm6, arm7, and simulator)
@@ -77,6 +77,7 @@ install script in this distribution).
 
 I've submitted a rdar report to Apple in the hopes that they'll update the
 specification files in Xcode, but that could take awhile.
+http://openradar.appspot.com/radar?id=1194402
 
 
 Installing the Template System
