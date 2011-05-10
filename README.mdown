@@ -50,34 +50,45 @@ Choosing Which Template System to Use
 
 In this distribution are two template systems, each with their strengths and
 weaknesses. You should choose whichever one best suits your needs and
-constraints (you could even install both if you wanted).
+constraints (or just install both).
 
 ### Fake Framework ###
 
 The fake framework uses the "relocatable object file" bundle hack that's been
 posted all over the net, which tricks Xcode into building something that mostly
-resembles a static framework.
+resembles a framework.
 
-The binary it outputs is an object file rather than a static library, which
-means that it's technically not a real framework. However, so far it's worked
-fine for everything I've tried it on. So the downside is the uncertainty of
-the hack.
+The binary it outputs is an object file rather than a library, and is of type
+"cfbundle", which Xcode doesn't like in certain circumstances.
+
+If all you're doing is adding the finished, compiled framework to a project,
+this is not a problem. If, however, you try to add the fake framework's
+PROJECT as a dependency of another project, or as part of a workspace,
+Xcode will skip the framwork during the dependency phase, and will fail to
+link properly.
+You can force the framework to link using the "-force_load" flag in
+"Other Linker Flags" in the project that uses the framework:
+
+    -force_load "$(BUILT_PRODUCTS_DIR)/MyFramework.framework/MyFramework"
+
 
 ### Real Framework ###
 
 The real framework is real in every sense of the word. It is a true static
 framework made by re-introducing specifications that Apple left out of Xcode.
 
-The downside is that in order for this to work, you must modify Xcode's
+In order to be able to build a real framework project, you must modify Xcode's
 specification files, which may not be desirable, or even possible due to
 restrictions your organization may place upon development environments.
 Also, if you are releasing a project that builds a real framework, anyone
 who wishes to build that framework must modify their Xcode as well (via the
-install script in this distribution).
+install script in this distribution). If all you're doing is distributing the
+fully built framework, and not the framework's project, the end user doesn't
+need to modify Xcode.
 
-I've submitted a rdar report to Apple in the hopes that they'll update the
+I've submitted a report to Apple in the hopes that they'll update the
 specification files in Xcode, but that could take awhile.
-http://openradar.appspot.com/radar?id=1194402
+[OpenRadar link here](http://openradar.appspot.com/radar?id=1194402)
 
 
 Installing the Template System
@@ -118,8 +129,10 @@ Building your iOS Framework
 
 1. Select the **Universal_Framework** scheme (any of its targets will do).
 
-2. Build. It will build the framework for arm6, arm7, and simulator, then merge
-   them together into a universal framework.
+2. Build.
+
+The **Universal_Framework** scheme will build the framework for arm6, arm7
+and simulator, and merge them together into a universal framework.
 
 The finished product will be in your standard build location as
 **(configuration)-universal/(your framework).framework**.
