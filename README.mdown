@@ -205,6 +205,20 @@ If this happens, simply clean and rebuild the target and the warnings should
 go away.
 
 
+### Core Data momd not found ###
+
+Xcode builds managed object model files differently in a framework project than
+it does in an application project. Instead of creating a .momd directory
+containing VersionInfo.plist and the .mom file, it simply creates the .mom file
+in the root directory.
+
+This means that when initializing your NSManagedObjectModel from a model in an
+embedded framework, you must specify your model URL with an extension of "mom"
+rather than "momd":
+
+    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"MyModel" withExtension:@"mom"];
+
+
 History
 -------
 
