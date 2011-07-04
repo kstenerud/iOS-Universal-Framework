@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/bin/bash
+
+set -u
+set -e
 
 # Assume this script was called normally and hasn't been added to the path or symlinked
 SCRIPT_DIR=$(dirname $0)
@@ -19,37 +22,45 @@ TEMPLATES_SRC_PATH="$SCRIPT_DIR/$TEMPLATES_DIR"
 TEMPLATES_DST_PATH="$LOCAL_DEVELOPER_PATH/Xcode/$TEMPLATES_DIR"
 
 
-echo "iOS Static Framework Installer"
-echo "=============================="
+# Last chance to back out
+echo "iOS Fake Static Framework Installer"
+echo "==================================="
 echo
-echo "This will install the iOS static framework templates and support files on your computer."
-echo "continue [y/N]"
+echo "This will install the fake iOS static framework templates on your computer."
+echo
+echo "The templates will be installed in $TEMPLATES_DST_PATH"
+echo
 
-read answer
+read -p "continue [y/N]: " answer
+echo
 if [ "$answer" != "Y" ] && [ "$answer" != "y" ]; then
-    echo Cancelled.
-    exit 0
+    echo
+    echo "[ Cancelled ]"
+    echo
+    exit 1
 fi
 
 
+# Install templates
+echo
 echo "[ Installing templates into $TEMPLATES_DST_PATH ]"
+echo
 echo mkdir -p "$TEMPLATES_DST_PATH"
 mkdir -p "$TEMPLATES_DST_PATH"
-if [ "$?" != "0" ]; then echo >&2 "Error: mkdir failed"; exit 1; fi
 cd "$TEMPLATES_SRC_PATH"
-if [ "$?" != "0" ]; then echo >&2 "Error: Could not change directory to $TEMPLATES_SRC_PATH"; exit 1; fi
 for template in *; do
-	installpath=$TEMPLATES_DST_PATH/$template
+	installpath="$TEMPLATES_DST_PATH/$template"
     echo rm -rf "$installpath"
     rm -rf "$installpath"
     echo cp -R "$template" "$installpath"
     cp -R "$template" "$installpath"
-    if [ "$?" != "0" ]; then echo >&2 "Error: copy failed"; exit 1; fi
 done
+echo
 
 # Remove old version of unit test framework
 rm -rf "$TEMPLATES_DST_PATH/Static iOS Framework Test.xctemplate"
 
 
 echo
-echo "Install complete"
+echo "[ Installation complete ]"
+echo
