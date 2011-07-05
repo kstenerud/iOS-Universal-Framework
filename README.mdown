@@ -42,7 +42,7 @@ An **embedded framework** is a wrapper around a static framework, designed to
 trick Xcode into seeing the framework's resources (images, plists, nibs, etc).
 
 These template systems will build **static frameworks**, **fake frameworks**,
-and **embedded frameworks**.
+and **embedded framework** variants of each.
 
 
 Choosing Which Template System to Use
@@ -129,7 +129,10 @@ Building your iOS Framework
 
 1. Select the **Universal_Framework** scheme (any of its targets will do).
 
-2. Build.
+2. (optional) Set the "Run" configuration for the "Universal_Framework" scheme
+   (Debug by default).
+
+3. Build.
 
 The **Universal_Framework** scheme will build the framework for arm6, arm7
 and simulator, and merge them together into a universal framework.
@@ -174,7 +177,7 @@ forgotten to make them public. See step 5 in **Creating an iOS Framework Project
 
 If someone who has not installed iOS Universal Framework in their development
 environment attempts to build a universal framework project (for a real
-framework), they'll get the following error:
+framework, not a fake framework), they'll get the following error:
 
     target specifies product type 'com.apple.product-type.framework.static',
     but there's no such product type for the 'iphonesimulator' platform
@@ -217,6 +220,47 @@ embedded framework, you must specify your model URL with an extension of "mom"
 rather than "momd":
 
     NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"MyModel" withExtension:@"mom"];
+
+
+### Unknown class MyClass in Interface Builder file. ###
+
+Since static frameworks are statically linked, the linker strips out any code
+it thinks is not being used. Unfortunately, the linker does not check xib
+files, and so if a class is referenced only in a xib, and not in objective-c
+code, the linker will drop that class from the final executable. This is a
+linker issue, not a framework issue (it also happens when you build a static
+library).
+
+Apple's built-in framworks don't suffer this problem because they are
+dynamically loaded at runtime and the complete, unstripped dynamic library
+exists in the iOS device's firmware.
+
+There are two ways around this:
+
+1. Have end users of your framework disable linker optimizations by adding
+   "-ObjC" and "-all_load" to "Other Linker Flags" in their project.
+
+2. Put a code reference to the class inside another class in your framework
+   that always gets used. For example, suppose you have "MyTextField", which
+   is getting stripped by the linker. Suppose you also have
+   "MyViewController", which uses MyTextField in its xib file and doesn't get
+   stripped. You could do the following:
+
+In MyTextField:
+   
+    + (void) forceLinkerLoad_ {}
+
+In MyViewController:
+   
+    + (void) initialize
+    {
+        [super initialize];
+        [MyTextField forceLinkerLoad_];
+    }
+
+Option 2 is more work for you, but it means that the end user won't have to
+disable linker optimizations.
+
 
 
 History

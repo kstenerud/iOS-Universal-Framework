@@ -176,5 +176,5 @@ rm -rf "$TEMPLATES_DST_PATH/Static iOS Framework Test.xctemplate"
 
 echo
 echo
-echo "[ Installation complete ]"
+echo "[ Installation complete. Please restart Xcode. ]"
 echo

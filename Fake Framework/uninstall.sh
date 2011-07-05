@@ -55,5 +55,5 @@ echo
 
 
 echo
-echo "[ Uninstall complete ]"
+echo "[ Uninstall complete. Please restart Xcode. ]"
 echo
