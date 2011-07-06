@@ -79,77 +79,68 @@
 					<key>ShellPath</key>
 					<string>/bin/sh</string>
 					<key>ShellScript</key>
-					<string>
+					<string>set -e
+set -u
+
 # Assume the target name is the same as the project name
 UFW_TARGET=${PROJECT}
 
-if [ -z ${SDK_NAME} ]; then
+if [ -z ${SDK_NAME} ]
+then
     # Use the latest iphoneos SDK available
-    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o &quot;iphoneos.*$&quot;)
-    while read -r line; do
-        UFW_SDK_VERSION=&quot;${line}&quot;
-    done &lt;&lt;&lt; &quot;${UFW_GREP_RESULT}&quot;
+    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o "iphoneos.*$")
+    while read -r line
+    do
+        UFW_SDK_VERSION="${line}"
+    done &lt;&lt;&lt; "${UFW_GREP_RESULT}"
 else
     # Use the SDK specified by XCode
-    UFW_SDK_VERSION=&quot;${SDK_NAME}&quot;
+    UFW_SDK_VERSION="${SDK_NAME}"
 fi
 
-UFW_SDK_VERSION=$(echo &quot;${UFW_SDK_VERSION}&quot; | grep -o &quot;[0-9].*$&quot;)
-UFW_FMWK_DIRNAME=&quot;${UFW_TARGET}.framework&quot;
-UFW_EMBEDDED_DIRNAME=&quot;${UFW_TARGET}.embeddedframework&quot;
-UFW_EXE_PATH=&quot;${UFW_FMWK_DIRNAME}/Versions/Current/${UFW_TARGET}&quot;
-UFW_IPHONE_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-iphoneos&quot;
-UFW_SIMULATOR_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-iphonesimulator&quot;
-UFW_UNIVERSAL_DIR=&quot;${BUILD_DIR}/${CONFIGURATION}-universal&quot;
+UFW_SDK_VERSION=$(echo "${UFW_SDK_VERSION}" | grep -o "[0-9].*$")
+UFW_FMWK_DIRNAME="${UFW_TARGET}.framework"
+UFW_EMBEDDED_DIRNAME="${UFW_TARGET}.embeddedframework"
+UFW_EXE_PATH="${UFW_FMWK_DIRNAME}/Versions/Current/${UFW_TARGET}"
+UFW_IPHONE_DIR="${BUILD_DIR}/${CONFIGURATION}-iphoneos"
+UFW_SIMULATOR_DIR="${BUILD_DIR}/${CONFIGURATION}-iphonesimulator"
+UFW_UNIVERSAL_DIR="${BUILD_DIR}/${CONFIGURATION}-universal"
 
 
 # Build Framework
 
-rm -rf &quot;${UFW_UNIVERSAL_DIR}&quot;
+rm -rf "${UFW_UNIVERSAL_DIR}"
 
-xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphoneos${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
-xcodebuild -target &quot;${UFW_TARGET}&quot; -configuration ${CONFIGURATION} -sdk iphonesimulator${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: xcodebuild failed&quot;; exit 1; fi
+xcodebuild -project "${PROJECT_FILE_PATH}" -target "${UFW_TARGET}" -configuration ${CONFIGURATION} -sdk iphoneos${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
+xcodebuild -project "${PROJECT_FILE_PATH}" -target "${UFW_TARGET}" -configuration ${CONFIGURATION} -sdk iphonesimulator${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
 
-if [ ! -f &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; ]; then
-echo &quot;Framework target \&quot;${UFW_TARGET}\&quot; had no source files to build from. Make sure your source files have the correct target membership&quot;
-exit 1
+if [ ! -f "${UFW_IPHONE_DIR}/${UFW_EXE_PATH}" ]
+then
+    echo "Framework target \"${UFW_TARGET}\" had no source files to build from. Make sure your source files have the correct target membership"
+    exit 1
 fi
 
-mkdir -p &quot;${UFW_UNIVERSAL_DIR}&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
-
-cp -a &quot;${UFW_IPHONE_DIR}/${UFW_FMWK_DIRNAME}&quot; &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp failed&quot;; exit 1; fi
-
-lipo -create -output &quot;${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_IPHONE_DIR}/${UFW_EXE_PATH}&quot; &quot;${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: lipo failed&quot;; exit 1; fi
+mkdir -p "${UFW_UNIVERSAL_DIR}"
+cp -a "${UFW_IPHONE_DIR}/${UFW_FMWK_DIRNAME}" "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}"
+lipo -create -output "${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}" "${UFW_IPHONE_DIR}/${UFW_EXE_PATH}" "${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}"
 
 
 # Build Embedded Framework
 
-mkdir -p &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: mkdir failed&quot;; exit 1; fi
+mkdir -p "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources"
+cp -a "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}" "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/"
 
-cp -a &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}&quot; &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cp failed&quot;; exit 1; fi
-
-cd &quot;${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}/Resources&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
-
+cd "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}/Resources"
 UFW_RESOURCE_LIST=$(ls)
-
-cd &quot;${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources&quot;
-if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: cd failed&quot;; exit 1; fi
-
-while read -r filename; do
-    if [ &quot;${filename}&quot; != &quot;Info.plist&quot; ]; then
-        ln -s &quot;../${UFW_FMWK_DIRNAME}/Resources/${filename}&quot;
-        if [ &quot;$?&quot; != &quot;0&quot; ]; then echo &gt;&amp;2 &quot;Error: link failed&quot;; exit 1; fi
+cd "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources"
+while read -r filename
+do
+    if [ "${filename}" != "Info.plist" ]
+    then
+        ln -s "../${UFW_FMWK_DIRNAME}/Resources/${filename}"
     fi
-done &lt;&lt;&lt; &quot;${UFW_RESOURCE_LIST}&quot;
-					</string>
+done &lt;&lt;&lt; "${UFW_RESOURCE_LIST}"
+</string>
                 </dict>
 			</array>
 		</dict>

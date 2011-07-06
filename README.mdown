@@ -110,8 +110,8 @@ Creating an iOS Framework Project
 
 1. Start a new project.
 
-2. For the project type, choose **Static iOS Framework**, which is under
-   **Framework & Library**.
+2. For the project type, choose **Static iOS Framework** (or **Fake Static
+   iOS Framework**), which is under **Framework & Library**.
 
 3. Optionally choose to include unit tests.
 
@@ -132,7 +132,10 @@ Building your iOS Framework
 2. (optional) Set the "Run" configuration for the "Universal_Framework" scheme
    (Debug by default).
 
-3. Build.
+3. Build **Universal_Framework**.
+
+4. Select your framework under "Products", show in Finder, go up one directory,
+   and use the framework inside (your-configuration)-universal
 
 The **Universal_Framework** scheme will build the framework for arm6, arm7
 and simulator, and merge them together into a universal framework.
@@ -143,8 +146,8 @@ The "Run" build configuration in the "Universal_Framework" scheme controls which
 configuration to build the universal framework from.
 
 It will also build **(your framework).embeddedframework**.
-This contains the normal framework, but also contains an extra
-reference to any resources included in your project. XCode won't look inside
+This contains the normal framework, and also contains extra symlink
+references to any resources included in your project. XCode won't look inside
 static frameworks for resources, so if you're going to include resources, you
 must distribute the embeddedframework version.
 
@@ -258,8 +261,8 @@ In MyViewController:
         [MyTextField forceLinkerLoad_];
     }
 
-Option 2 is more work for you, but it means that the end user won't have to
-disable linker optimizations.
+Option 2 is more work for you, but if done right it saves the end user from
+having to disable linker optimizations just to use your framework.
 
 
 
