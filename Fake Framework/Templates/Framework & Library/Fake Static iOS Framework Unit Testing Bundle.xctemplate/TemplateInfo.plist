@@ -16,7 +16,7 @@
             <key>SharedSettings</key>
             <dict>
             <key>OTHER_LDFLAGS</key>
-            <string>-framework SenTestingKit -force_load &quot;$(CONFIGURATION_BUILD_DIR)/FakeFramework&quot;</string>
+            <string>-framework SenTestingKit -framework .fake_fw_testing</string>
             </dict>
 		</dict>
 	</array>

@@ -1,4 +1,4 @@
-iOS Universal Framework Mk 4
+iOS Universal Framework Mk 5
 ============================
 
 An XCode 4 project template to build universal (arm6, arm7, and simulator)
@@ -24,6 +24,9 @@ Apple also removed static iOS framework creation functionality in XCode.
 Xcode is still technically capable of building frameworks for iOS, and with a
 little tweaking it can be re-enabled.
 
+Static frameworks are perfectly acceptable for packaging code intended for the
+app store. Despite appearances, it's just a static library at the core.
+
 
 Kinds of Frameworks
 -------------------
@@ -35,14 +38,15 @@ A **statically linked framework** is almost the same, except it gets linked
 to your binary at compile time, so there's no problem using them.
 
 A **fake framework** is the result of a hack upon a bundle target in Xcode and
-some scripting magic. It looks and behaves like a static framework, but it's
-implemented as a relocatable object rather than a static library.
+some scripting magic. It looks and behaves like a static framework, and a fake
+framework project is functionally equivalent in most aspects to a real
+framework project (but not all).
 
 An **embedded framework** is a wrapper around a static framework, designed to
 trick Xcode into seeing the framework's resources (images, plists, nibs, etc).
 
-These template systems will build **static frameworks**, **fake frameworks**,
-and **embedded framework** variants of each.
+This distribution includes templates to build **static frameworks** and
+**fake frameworks**, as well as **embedded framework** variants of each.
 
 
 Choosing Which Template System to Use
@@ -52,24 +56,73 @@ In this distribution are two template systems, each with their strengths and
 weaknesses. You should choose whichever one best suits your needs and
 constraints (or just install both).
 
+### Short decision chart for the impatient ###
+
+* I can't (or won't) modify my Xcode installation: **Fake framework**
+
+* I'm just distributing the final framework binary (not the project):
+  **Either kind will work**
+
+* I'm distributing my framework **project** to other developers who may not
+  want to modify their Xcode install: **Fake framework**
+
+* I need to set up the framework project as a dependency of another project
+  (in a workspace or as a child project): **Real framework**
+  (or use the -force_load hack)
+
+* I'm adding static libraries/frameworks to my framework project AND I want
+  them linked into the produced framework so they don't need to be added
+  separately to end-user projects: **Fake framework**
+
+
 ### Fake Framework ###
 
-The fake framework uses the "relocatable object file" bundle hack that's been
-posted all over the net, which tricks Xcode into building something that mostly
-resembles a framework.
+The fake framework is based on the well known "relocatable object file" bundle
+hack, which tricks Xcode into building something that mostly resembles a
+framework, but is really a bundle.
 
-The binary it outputs is an object file rather than a library, and is of type
-"cfbundle", which Xcode doesn't like in certain circumstances.
+The fake framework template takes this a step further, using some scripting to
+generate a real static framework (based on a static library rather than a
+relocatable object file). However, the framework's **project** still defines
+it to be of type 'wrapper.cfbundle', which makes it a second class citizen
+according to Xcode.
 
-If all you're doing is adding the finished, compiled framework to a project,
-this is not a problem. If, however, you try to add the fake framework's
-PROJECT as a dependency of another project, or as part of a workspace,
-Xcode will skip the framwork during the dependency phase, and will fail to
-link properly.
-You can force the framework to link using the "-force_load" flag in
-"Other Linker Flags" in the project that uses the framework:
+So while it produces a proper static framework that works just as well as a
+"real" static framework, things get tricky when you have dependencies.
 
-    -force_load "$(BUILT_PRODUCTS_DIR)/MyFramework.framework/MyFramework"
+#### The problem with dependencies ####
+
+If you're just setting up a standalone project, then you're not using
+dependencies, so there's no problem.
+
+If, however, you use project dependencies (such as in workspaces), Xcode won't
+be happy. The fake framework won't show up in the list when you click the '+'
+button under "Link Binary With Libraries" in your main application project.
+You can manually drag it from "Products" under your fake framework project,
+but then when you build your main project, you'll get a warning like this:
+
+    warning: skipping file '/somewhere/MyFramework.framework'
+    (unexpected file type 'wrapper.cfbundle' in Frameworks & Libraries build phase)
+
+This will be followed by linker errors for anything in your fake framework.
+
+You can get around this by forcing the framework to link using the
+"-force_load" flag in "Other Linker Flags" in the project that uses the
+framework:
+
+    -force_load "$BUILT_PRODUCTS_DIR/MyFramework.framework/MyFramework"
+
+That's annoying, but at least there's a workaround.
+
+#### Adding other static libraries/frameworks ####
+
+If you add other static (not dynamic) libraries or other static frameworks to
+your fake framework project, they will be **LINKED INTO** your final framework
+binary. In a real framework project they are merely referenced, not linked in.
+
+You can avoid this behavior by only including the header files into your
+project (so that it will compile), not the static libraries/frameworks
+themselves.
 
 
 ### Real Framework ###
@@ -81,14 +134,21 @@ In order to be able to build a real framework project, you must modify Xcode's
 specification files, which may not be desirable, or even possible due to
 restrictions your organization may place upon development environments.
 Also, if you are releasing a project that builds a real framework, anyone
-who wishes to build that framework must modify their Xcode as well (via the
-install script in this distribution). If all you're doing is distributing the
-fully built framework, and not the framework's project, the end user doesn't
-need to modify Xcode.
+who wishes to **build** that framework must modify their Xcode as well (via
+the install script in this distribution).
+
+If all you're doing is distributing the fully built framework, and not the
+framework's project, then the end user doesn't need to modify Xcode.
 
 I've submitted a report to Apple in the hopes that they'll update the
 specification files in Xcode, but that could take awhile.
 [OpenRadar link here](http://openradar.appspot.com/radar?id=1194402)
+
+#### Adding other static libraries/frameworks ####
+
+If you add other static (not dynamic) libraries or other static frameworks to
+your real framework project, they will only be referenced, **NOT** linked into
+the final framework binary like they would in a fake framework.
 
 
 Installing the Template System
@@ -127,29 +187,33 @@ Creating an iOS Framework Project
 Building your iOS Framework
 ---------------------------
 
-1. Select the **Universal_Framework** scheme (any of its targets will do).
+1. Select your framework's scheme (any of its targets will do).
 
-2. (optional) Set the "Run" configuration for the "Universal_Framework" scheme
-   (Debug by default).
+2. (optional) Set the "Run" configuration in the scheme editor
+   (It's set to Debug by default).
 
-3. Build **Universal_Framework**.
+3. Build the framework (both "iOS device" and "Simulator" destinations will
+   build the same universal binary, so it doesn't matter which you select).
 
-4. Select your framework under "Products", show in Finder, go up one directory,
-   and use the framework inside (your-configuration)-universal
+4. Select your framework under "Products", then show in Finder.
 
-The **Universal_Framework** scheme will build the framework for arm6, arm7
-and simulator, and merge them together into a universal framework.
+There will be two folders in the build location: **(your framework).framework**
+and **(your framework).embeddedframework**
 
-The finished product will be in your standard build location as
-**(configuration)-universal/(your framework).framework**.
-The "Run" build configuration in the "Universal_Framework" scheme controls which
-configuration to build the universal framework from.
+If your framework has only code, and no resources (like images, scripts, xibs,
+core data momd files, etc), you can distribute **(your framework).framework**
+to your users and it will just work.
 
-It will also build **(your framework).embeddedframework**.
-This contains the normal framework, and also contains extra symlink
-references to any resources included in your project. XCode won't look inside
-static frameworks for resources, so if you're going to include resources, you
-must distribute the embeddedframework version.
+If you have included resources in your framework, you **MUST** distribute
+**(your framework).embeddedframework**.
+
+Why is an embedded framework necessary? Because XCode won't look inside static
+frameworks to find resources, so if you distribute
+(your framework).framework, none of its resources will be visible or usable.
+
+An embedded framework is simply an extra wrapper around a framework,
+containing symbolic links to the framework's resources. Doing this makes Xcode
+happy-warm-and-fuzzy because it can finally see the resources.
 
 
 Using an iOS Framework
@@ -186,8 +250,9 @@ framework, not a fake framework), they'll get the following error:
     but there's no such product type for the 'iphonesimulator' platform
 
 Xcode requires some modification in order to be able to build true iOS static
-frameworks (see the diff files for details), so please install it on all
-development machines that will build your real static framework projects (this
+frameworks (see the two diff files in the "Real Framework" folder of this
+repository for the gory details), so please install it on all development
+machines that will build your real static framework projects (this
 isn't needed for users of your framework, only for builders of the framework).
 
 
@@ -201,8 +266,8 @@ If this happens, you'll need to start over and create a new project.
 
 ### Linker Warnings ###
 
-The first time you build your framework target (not the Universal_Framework
-target), XCode may complain about missing folders during the linking phase:
+The first time you build your framework target, XCode may complain about
+missing folders during the linking phase:
 
     ld: warning: directory not found for option
     '-L/Users/myself/Library/Developer/Xcode/DerivedData/MyFramework-ccahfoccjqiognaqraesrxdyqcne/Build/Products/Debug-iphoneos'
@@ -265,6 +330,38 @@ Option 2 is more work for you, but if done right it saves the end user from
 having to disable linker optimizations just to use your framework.
 
 
+### unexpected file type 'wrapper.cfbundle' in Frameworks & Libraries build phase ###
+
+This happens when you try to use a fake framework project as a dependency in a
+workspace, or as a child project (real framework projects don't have this
+issue). The only known workaround is to force load it from the project that
+depends on it.
+
+Add the following to "Other Linker Flags" in the project that depends on the
+framework:
+
+    -force_load "$BUILT_PRODUCTS_DIR/MyFramework.framework/MyFramework"
+
+You'll still get the warning, but it won't fail in the linker phase anymore.
+
+
+### Libraries being linked or not being linked into the final framework ###
+
+Unfortunately, due to the way Xcode works, the "Real Framework" and
+"Fake Framework" templates handle included static libraries/frameworks
+differently.
+
+The "Real Framework" template follows correct static library procedure, NOT
+linking other static libraries/frameworks into the final product.
+
+The "Fake Framework" template tricks Xcode into thinking that it's building a
+relocatable object file, and so the linking phase treats it as if it were
+building an executable, linking all static code sources into the final binary
+(although it doesn't check for missing object code). To get the
+"Real Framework" behavior, you should include only the header files from the
+library/framework in your framework project, not the static library or
+framework itself.
+
 
 History
 -------
@@ -311,6 +408,20 @@ the "real framework" installer needs to modify Xcode.
 This also fixes some issues that the fake framework had in Mk 2 (such as
 the curious behavior of embedding the full path to the compiled files within
 the files themselves, resulting in warnings when building with that framework).
+
+
+### Mk 5
+
+This version does away with the extra target and script. Everything is self
+contained in the framework target, and the framework under the "Products"
+group is actually the universal framework (no more Debug-univesal or
+Release-universal folders).
+
+You can build and clean like you would in any other project.
+
+As well, the "Fake" framework template now builds a proper static library
+instead of a relocatable object file (although Xcode still doesn't believe
+that it's real).
 
 
 License

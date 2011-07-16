@@ -9,7 +9,7 @@
 	<key>Concrete</key>
 	<true/>
 	<key>Description</key>
-	<string>This template builds a static iOS framework. Building "Universal Framework" will produce "&lt;configuration&gt;-universal/&lt;your framework&gt;" in your build folder.</string>
+	<string>This template builds a static iOS framework.</string>
 	<key>SortOrder</key>
 	<integer>5</integer>
 	<key>Ancestors</key>
@@ -39,6 +39,87 @@
 			<array>
 				<dict>
 					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShowEnvVarsInLog</key>
+					<string>false</string>
+					<key>ShellScript</key>
+					<string>set -e
+
+set +u
+if [[ $UFW_MASTER_SCRIPT_RUNNING ]]
+then
+    # Nothing for the slave script to do
+    exit 0
+fi
+set -u
+
+if [[ "$SDK_NAME" =~ ([A-Za-z]+) ]]
+then
+    UFW_SDK_PLATFORM=${BASH_REMATCH[1]}
+else
+    echo "Could not find platform name from SDK_NAME: $SDK_NAME"
+    exit 1
+fi
+
+if [[ "$SDK_NAME" =~ ([0-9]+.*$) ]]
+then
+	UFW_SDK_VERSION=${BASH_REMATCH[1]}
+else
+    echo "Could not find sdk version  from SDK_NAME: $SDK_NAME"
+    exit 1
+fi
+
+if [[ "$UFW_SDK_PLATFORM" = "iphoneos" ]]
+then
+    UFW_OTHER_PLATFORM=iphonesimulator
+else
+    UFW_OTHER_PLATFORM=iphoneos
+fi
+
+if [[ "$BUILT_PRODUCTS_DIR" =~ (.*)$UFW_SDK_PLATFORM$ ]]
+then
+    UFW_OTHER_BUILT_PRODUCTS_DIR="${BASH_REMATCH[1]}${UFW_OTHER_PLATFORM}"
+else
+    echo "Could not find $UFW_SDK_PLATFORM in $BUILT_PRODUCTS_DIR"
+    exit 1
+fi
+
+
+# Short-circuit if all binaries are up to date
+
+if [[ -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+   [[ -f "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+   [[ ! "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
+   [[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+   [[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+   [[ ! "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
+then
+    exit 0
+fi
+
+
+# Clean other platform if needed
+
+if [[ ! -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]]
+then
+	echo "Platform \"$UFW_SDK_PLATFORM\" was cleaned recently. Cleaning \"$UFW_OTHER_PLATFORM\" as well"
+	echo xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" clean
+	xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" clean
+fi
+
+
+# Make sure we are building from fresh binaries
+
+rm -rf "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+rm -rf "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+</string>
+                </dict>
+				<dict>
+					<key>Class</key>
 					<string>Sources</string>
 				</dict>
 				<dict>
@@ -53,6 +134,168 @@
 					<key>Class</key>
 					<string>Resources</string>
 				</dict>
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShowEnvVarsInLog</key>
+					<string>false</string>
+					<key>ShellScript</key>
+					<string>set -e
+
+set +u
+if [[ $UFW_MASTER_SCRIPT_RUNNING ]]
+then
+    # Nothing for the slave script to do
+    exit 0
+fi
+set -u
+export UFW_MASTER_SCRIPT_RUNNING=1
+
+
+# Functions
+
+## List files in the specified directory, storing to the specified array.
+#
+# @param $1 The path to list
+# @param $2 The name of the array to fill
+#
+##
+list_files ()
+{
+    filelist=$(ls "$1")
+    while read line
+    do
+        eval "$2[\${#$2[*]}]=\"\$line\""
+    done &lt;&lt;&lt; "$filelist"
+}
+
+
+# Sanity check
+
+if [[ ! -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]]
+then
+    echo "Framework target \"${TARGET_NAME}\" had no source files to build from. Make sure your source files have the correct target membership"
+    exit 1
+fi
+
+
+# Gather information
+
+if [[ "$SDK_NAME" =~ ([A-Za-z]+) ]]
+then
+    UFW_SDK_PLATFORM=${BASH_REMATCH[1]}
+else
+    echo "Could not find platform name from SDK_NAME: $SDK_NAME"
+    exit 1
+fi
+
+if [[ "$SDK_NAME" =~ ([0-9]+.*$) ]]
+then
+    UFW_SDK_VERSION=${BASH_REMATCH[1]}
+else
+    echo "Could not find sdk version from SDK_NAME: $SDK_NAME"
+    exit 1
+fi
+
+if [[ "$UFW_SDK_PLATFORM" = "iphoneos" ]]
+then
+    UFW_OTHER_PLATFORM=iphonesimulator
+else
+    UFW_OTHER_PLATFORM=iphoneos
+fi
+
+if [[ "$BUILT_PRODUCTS_DIR" =~ (.*)$UFW_SDK_PLATFORM$ ]]
+then
+    UFW_OTHER_BUILT_PRODUCTS_DIR="${BASH_REMATCH[1]}${UFW_OTHER_PLATFORM}"
+else
+    echo "Could not find $UFW_SDK_PLATFORM in $BUILT_PRODUCTS_DIR"
+    exit 1
+fi
+
+
+# Short-circuit if all binaries are up to date.
+# We already checked the other platform in the prerun script.
+
+if [[ -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; [[ -f "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; [[ ! "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
+then
+    exit 0
+fi
+
+
+# Make sure the other platform gets built
+
+echo "Build other platform"
+
+echo xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
+xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
+
+
+# Build the fat static library binary
+
+echo "Create universal static library"
+
+echo "$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
+"$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
+
+echo mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+
+
+# Build framework structure
+
+echo "Build symlinks"
+
+echo ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+echo ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
+ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
+echo ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
+ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
+echo ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
+ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
+
+
+# Link to binary for unit tests
+
+mkdir -p "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework"
+ln -sf "../${WRAPPER_NAME}/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework/.fake_fw_testing"
+
+
+# Build embedded framework structure
+
+echo "Build Embedded Framework"
+
+echo rm -rf "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+rm -rf "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+echo mkdir -p "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources"
+mkdir -p "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources"
+echo cp -a "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/"
+cp -a "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/"
+
+declare -a UFW_FILE_LIST
+list_files "${BUILT_PRODUCTS_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}" UFW_FILE_LIST
+for filename in "${UFW_FILE_LIST[@]}"
+do
+    if [[ "${filename}" != "Info.plist" ]] &amp;&amp; [[ ! "${filename}" =~ .*\.lproj$ ]]
+    then
+        echo ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+        ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+    fi
+done
+
+
+# Replace other platform's framework with a copy of this one (so that both have the same universal binary)
+
+echo "Copy from $UFW_SDK_PLATFORM to $UFW_OTHER_PLATFORM"
+
+echo rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+echo cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+</string>
+				</dict>
 			</array>
 			<key>Frameworks</key>
 			<array>
@@ -60,89 +303,6 @@
 			</array>
             <key>ProductType</key>
             <string>com.apple.product-type.framework.static</string>
-		</dict>
-		<dict>
-			<key>Name</key>
-			<string>Universal_Framework</string>
-			<key>TargetType</key>
-			<string>Aggregate</string>
-			<key>SharedSettings</key>
-			<dict>
-				<key>PRODUCT_NAME</key>
-				<string>UniversalFramework</string>
-			</dict>
-			<key>BuildPhases</key>
-			<array>
-				<dict>
-					<key>Class</key>
-					<string>ShellScript</string>
-					<key>ShellPath</key>
-					<string>/bin/sh</string>
-					<key>ShellScript</key>
-					<string>set -e
-set -u
-
-# Assume the target name is the same as the project name
-UFW_TARGET=${PROJECT}
-
-if [ -z ${SDK_NAME} ]
-then
-    # Use the latest iphoneos SDK available
-    UFW_GREP_RESULT=$(xcodebuild -showsdks | grep -o "iphoneos.*$")
-    while read -r line
-    do
-        UFW_SDK_VERSION="${line}"
-    done &lt;&lt;&lt; "${UFW_GREP_RESULT}"
-else
-    # Use the SDK specified by XCode
-    UFW_SDK_VERSION="${SDK_NAME}"
-fi
-
-UFW_SDK_VERSION=$(echo "${UFW_SDK_VERSION}" | grep -o "[0-9].*$")
-UFW_FMWK_DIRNAME="${UFW_TARGET}.framework"
-UFW_EMBEDDED_DIRNAME="${UFW_TARGET}.embeddedframework"
-UFW_EXE_PATH="${UFW_FMWK_DIRNAME}/Versions/Current/${UFW_TARGET}"
-UFW_IPHONE_DIR="${BUILD_DIR}/${CONFIGURATION}-iphoneos"
-UFW_SIMULATOR_DIR="${BUILD_DIR}/${CONFIGURATION}-iphonesimulator"
-UFW_UNIVERSAL_DIR="${BUILD_DIR}/${CONFIGURATION}-universal"
-
-
-# Build Framework
-
-rm -rf "${UFW_UNIVERSAL_DIR}"
-
-xcodebuild -project "${PROJECT_FILE_PATH}" -target "${UFW_TARGET}" -configuration ${CONFIGURATION} -sdk iphoneos${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
-xcodebuild -project "${PROJECT_FILE_PATH}" -target "${UFW_TARGET}" -configuration ${CONFIGURATION} -sdk iphonesimulator${UFW_SDK_VERSION} BUILD_DIR=${BUILD_DIR} CONFIGURATION_TEMP_DIR=${CONFIGURATION_TEMP_DIR} clean build
-
-if [ ! -f "${UFW_IPHONE_DIR}/${UFW_EXE_PATH}" ]
-then
-    echo "Framework target \"${UFW_TARGET}\" had no source files to build from. Make sure your source files have the correct target membership"
-    exit 1
-fi
-
-mkdir -p "${UFW_UNIVERSAL_DIR}"
-cp -a "${UFW_IPHONE_DIR}/${UFW_FMWK_DIRNAME}" "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}"
-lipo -create -output "${UFW_UNIVERSAL_DIR}/${UFW_EXE_PATH}" "${UFW_IPHONE_DIR}/${UFW_EXE_PATH}" "${UFW_SIMULATOR_DIR}/${UFW_EXE_PATH}"
-
-
-# Build Embedded Framework
-
-mkdir -p "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources"
-cp -a "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}" "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/"
-
-cd "${UFW_UNIVERSAL_DIR}/${UFW_FMWK_DIRNAME}/Resources"
-UFW_RESOURCE_LIST=$(ls)
-cd "${UFW_UNIVERSAL_DIR}/${UFW_EMBEDDED_DIRNAME}/Resources"
-while read -r filename
-do
-    if [ "${filename}" != "Info.plist" ]
-    then
-        ln -s "../${UFW_FMWK_DIRNAME}/Resources/${filename}"
-    fi
-done &lt;&lt;&lt; "${UFW_RESOURCE_LIST}"
-</string>
-                </dict>
-			</array>
 		</dict>
 	</array>
 	<key>Options</key>
