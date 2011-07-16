@@ -9,6 +9,7 @@ frameworks for iOS.
 By Karl Stenerud
 
 
+
 Why a Framework?
 ----------------
 
@@ -26,6 +27,7 @@ little tweaking it can be re-enabled.
 
 Static frameworks are perfectly acceptable for packaging code intended for the
 app store. Despite appearances, it's just a static library at the core.
+
 
 
 Kinds of Frameworks
@@ -49,6 +51,7 @@ This distribution includes templates to build **static frameworks** and
 **fake frameworks**, as well as **embedded framework** variants of each.
 
 
+
 Choosing Which Template System to Use
 -------------------------------------
 
@@ -68,7 +71,7 @@ constraints (or just install both).
 
 * I need to set up the framework project as a dependency of another project
   (in a workspace or as a child project): **Real framework**
-  (or use the -force_load hack)
+  (or Fake framework, using the -framework trick - see below)
 
 * I'm adding static libraries/frameworks to my framework project AND I want
   them linked into the produced framework so they don't need to be added
@@ -106,13 +109,13 @@ but then when you build your main project, you'll get a warning like this:
 
 This will be followed by linker errors for anything in your fake framework.
 
-You can get around this by forcing the framework to link using the
-"-force_load" flag in "Other Linker Flags" in the project that uses the
-framework:
+Fortunately, there is a workaround. You can manually tell the linker to link
+in the framework by adding a "-framework" switch with your framework's name in
+"Other Linker Flags" in the project that uses the framework:
 
-    -force_load "$BUILT_PRODUCTS_DIR/MyFramework.framework/MyFramework"
+    -framework MyFramework
 
-That's annoying, but at least there's a workaround.
+It won't get rid of the warning, which is annoying, but it does link properly.
 
 #### Adding other static libraries/frameworks ####
 
@@ -151,6 +154,7 @@ your real framework project, they will only be referenced, **NOT** linked into
 the final framework binary like they would in a fake framework.
 
 
+
 Installing the Template System
 ------------------------------
 
@@ -161,7 +165,6 @@ Now restart Xcode and you'll see **Static iOS Framework** (or **Fake Static
 iOS Framework**) under **Framework & Library** when creating a new project.
 
 To uninstall, run the **uninstall.sh** script and restart Xcode.
-
 
 
 
@@ -182,6 +185,7 @@ Creating an iOS Framework Project
    target, expand **Copy Headers**, then drag any header files you want to
    make public from the **Project** or **Private** section to the **Public**
    section.
+
 
 
 Building your iOS Framework
@@ -216,6 +220,7 @@ containing symbolic links to the framework's resources. Doing this makes Xcode
 happy-warm-and-fuzzy because it can finally see the resources.
 
 
+
 Using an iOS Framework
 ----------------------
 
@@ -229,6 +234,7 @@ syntax rather than quotes.
 For example, with framework "MyFramework":
 
     #import <MyFramework/MyClass.h>
+
 
 
 Troubleshooting
@@ -332,15 +338,18 @@ having to disable linker optimizations just to use your framework.
 
 ### unexpected file type 'wrapper.cfbundle' in Frameworks & Libraries build phase ###
 
-This happens when you try to use a fake framework project as a dependency in a
+This happens when you use a fake framework project as a dependency in a
 workspace, or as a child project (real framework projects don't have this
-issue). The only known workaround is to force load it from the project that
-depends on it.
+issue). Even though the framework project produces a proper static framework,
+Xcode only looks at the project file, which says it's a bundle, and so it
+issues a warning during the dependency check and then skips it during the
+linker phase.
 
-Add the following to "Other Linker Flags" in the project that depends on the
-framework:
+You can get it to link properly by manually adding a command to link
+your framework during the linker phase. Add a command to link your framework
+in "Other Linker Flags" in the project that depends on the framework:
 
-    -force_load "$BUILT_PRODUCTS_DIR/MyFramework.framework/MyFramework"
+    -framework MyFramework
 
 You'll still get the warning, but it won't fail in the linker phase anymore.
 
@@ -361,6 +370,39 @@ building an executable, linking all static code sources into the final binary
 "Real Framework" behavior, you should include only the header files from the
 library/framework in your framework project, not the static library or
 framework itself.
+
+
+### Unrecognized selector in (some class with a category method) ###
+
+If your static library or static framework contains a module with ONLY
+category code (no full class implementations), the linker will get confused,
+and will leave the code out of the final binary. Since it's not present in the
+final product, you'll get "unrecognized selector" exceptions when any call is
+made to those category methods.
+
+To get around this, put a dummy class into the module containing the category
+code. The linker, seeing a full Objective-C class, will link the module in,
+including the category code.
+
+I've made a header file [LoadableCategory.h](https://github.com/kstenerud/Objective-Gems/blob/master/Objective-Gems/LoadableCategory.h)
+to make this easier to do:
+
+    #import "SomeConcreteClass+MyAdditions.h"
+    #import "LoadableCategory.h"
+    
+    
+    MAKE_CATEGORIES_LOADABLE(SomeConcreteClass_MyAdditions);
+
+    
+    @implementation SomeConcreteClass (MyAdditions)
+    
+    ...
+    
+    @end
+
+You will also need to add "-ObjC" to the "Other Linker Flags" build setting in
+any project that uses the framework.
+
 
 
 History
@@ -422,6 +464,7 @@ You can build and clean like you would in any other project.
 As well, the "Fake" framework template now builds a proper static library
 instead of a relocatable object file (although Xcode still doesn't believe
 that it's real).
+
 
 
 License
