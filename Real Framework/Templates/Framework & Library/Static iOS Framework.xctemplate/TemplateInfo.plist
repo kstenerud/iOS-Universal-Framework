@@ -243,26 +243,6 @@ echo mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/$
 mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
 
 
-# Build framework structure
-
-echo "Build symlinks"
-
-echo ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
-ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
-echo ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
-ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
-echo ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
-ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
-echo ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
-ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
-
-
-# Link to binary for unit tests
-
-mkdir -p "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework"
-ln -sf "../${WRAPPER_NAME}/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework/.fake_fw_testing"
-
-
 # Build embedded framework structure
 
 echo "Build Embedded Framework"
