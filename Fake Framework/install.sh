@@ -4,7 +4,7 @@ set -u
 set -e
 
 # Assume this script was called normally and hasn't been added to the path or symlinked
-SCRIPT_DIR=$(dirname $0)
+SCRIPT_DIR=$(dirname "$0")
 if [[ $SCRIPT_DIR != /* ]]; then
     if [[ $SCRIPT_DIR == "." ]]; then
         SCRIPT_DIR=$PWD
