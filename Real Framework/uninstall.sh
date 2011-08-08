@@ -19,11 +19,11 @@ LOCAL_DEVELOPER_PATH="$HOME/Library/Developer"
 
 TEMPLATES_DIR="Templates/Framework & Library"
 SPECIFICATIONS_DIR="Developer/Library/Xcode/Specifications"
+SPECIFICATIONS_FILE="UFW-iOSStaticFramework.xcspec"
 
-IOS_PATCH_FILE="$SCRIPT_DIR/iphone_specifications.diff"
-SIM_PATCH_FILE="$SCRIPT_DIR/simulator_specifications.diff"
 TEMPLATES_SRC_PATH="$SCRIPT_DIR/$TEMPLATES_DIR"
 TEMPLATES_DST_PATH="$LOCAL_DEVELOPER_PATH/Xcode/$TEMPLATES_DIR"
+
 IOS_SPECIFICATIONS_PATH="Platforms/iPhoneOS.platform/$SPECIFICATIONS_DIR"
 SIM_SPECIFICATIONS_PATH="Platforms/iPhoneSimulator.platform/$SPECIFICATIONS_DIR"
 
@@ -69,14 +69,10 @@ SIM_SPECIFICATIONS_DST_PATH="$GLOBAL_DEVELOPER_PATH/$SIM_SPECIFICATIONS_PATH"
 
 # Last chance to back out
 echo
-echo "I am about to restore the following files to their original state:"
+echo "I am about to remove the following custom specifications (these are not part of the original Xcode install):"
 echo
-echo " * $IOS_SPECIFICATIONS_DST_PATH/iPhoneOSPackageTypes.xcspec"
-echo " * $IOS_SPECIFICATIONS_DST_PATH/iPhoneOSProductTypes.xcspec"
-echo " * $SIM_SPECIFICATIONS_DST_PATH/iPhoneOSPackageTypes.xcspec"
-echo " * $SIM_SPECIFICATIONS_DST_PATH/iPhoneOSProductTypes.xcspec"
-echo
-echo "The templates will be removed from $TEMPLATES_DST_PATH"
+echo " * $IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+echo " * $SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
 echo
 
 read -p "continue [y/N]: " answer
@@ -89,46 +85,14 @@ if [ "$answer" != "Y" ] && [ "$answer" != "y" ]; then
 fi
 
 
-# Restore files in Xcode
+# Remove spec files
 echo
-echo "[ Restoring original iOS specification files in Xcode ]"
+echo "[ Removing custom specification files ]"
 echo
-cd "$IOS_SPECIFICATIONS_DST_PATH"
-set +e
-patch --dry-run -p1 -b -R -N -s <"$IOS_PATCH_FILE"
-if [ "$?" != "0" ]
-then
-	echo
-	echo >&2 "NOT MODIFIED: Could not remove patches in $IOS_PATCH_FILE from $IOS_SPECIFICATIONS_DST_PATH. Have they already been removed?"
-else
-    set -e
-    echo cd "$IOS_SPECIFICATIONS_DST_PATH"
-    cd "$IOS_SPECIFICATIONS_DST_PATH"
-    echo "patch -p1 -b -R -N <$IOS_PATCH_FILE"
-    patch -p1 -b -R -N <"$IOS_PATCH_FILE"
-fi
-echo
-set -e
-
-echo
-echo "[ Restoring original Simulator specification files in Xcode ]"
-echo
-cd "$SIM_SPECIFICATIONS_DST_PATH"
-set +e
-patch --dry-run -p1 -b -R -N -s <"$SIM_PATCH_FILE"
-if [ "$?" != "0" ]
-then
-	echo
-	echo >&2 "NOT MODIFIED: Could not remove patches in $SIM_PATCH_FILE from $SIM_SPECIFICATIONS_DST_PATH. Have they already been removed?"
-else
-    set -e
-    echo cd "$SIM_SPECIFICATIONS_DST_PATH"
-    cd "$SIM_SPECIFICATIONS_DST_PATH"
-    echo "patch -p1 -b -R -N <$SIM_PATCH_FILE"
-    patch -p1 -b -R -N <"$SIM_PATCH_FILE"
-fi
-echo
-set -e
+echo rm -f "$IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+rm -f "$IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+echo rm -f "$SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+rm -f "$SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
 
 
 # Remove templates

@@ -155,6 +155,18 @@ the final framework binary like they would in a fake framework.
 
 
 
+Upgrading from previous iOS-Universal-Framework versions
+--------------------------------------------------------
+
+If you are upgrading from iOS-Universal-Framework **Mk 5 or earlier** and were
+using the **Real Static Framework**, please run "uninstall_legacy.sh" to remove
+any patches that were previously applied to Xcode.
+
+The new real framework template system uses a cleaner approach to avoid
+possible conflicts with future versions of Xcode.
+
+
+
 Installing the Template System
 ------------------------------
 
@@ -464,6 +476,16 @@ You can build and clean like you would in any other project.
 As well, the "Fake" framework template now builds a proper static library
 instead of a relocatable object file (although Xcode still doesn't believe
 that it's real).
+
+
+### Mk 6
+
+This version makes the Xcode modifications for real static frameworks safer
+by simply adding an extra specification file instead of patching existing
+ones.
+
+Users upgrading from Mk 3, Mk 4, or Mk 5 can run "uninstall_legacy.sh" to
+unpatch Xcode.
 
 
 

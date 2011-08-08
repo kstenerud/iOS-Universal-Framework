@@ -1,0 +1,75 @@
+
+(
+    
+	// Static framework wrapper
+	{   Type = PackageType;
+		Identifier = com.apple.package-type.wrapper.framework.static;
+		Name = "Mach-O Static Framework";
+		Description = "Mach-O Static Framework";
+		DefaultBuildSettings = {
+			WRAPPER_PREFIX = "";
+			WRAPPER_SUFFIX = ".framework";
+			WRAPPER_NAME = "$(WRAPPER_PREFIX)$(PRODUCT_NAME)$(WRAPPER_SUFFIX)";
+			VERSIONS_FOLDER_PATH = "$(WRAPPER_NAME)/Versions";
+			CONTENTS_FOLDER_PATH = "$(VERSIONS_FOLDER_PATH)/$(FRAMEWORK_VERSION)";
+			CURRENT_VERSION = "Current";
+			EXECUTABLE_PREFIX = "";
+			EXECUTABLE_SUFFIX = "";
+			EXECUTABLE_NAME = "$(EXECUTABLE_PREFIX)$(PRODUCT_NAME)$(EXECUTABLE_VARIANT_SUFFIX)$(EXECUTABLE_SUFFIX)";
+			EXECUTABLE_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)";
+			EXECUTABLE_PATH = "$(EXECUTABLE_FOLDER_PATH)/$(EXECUTABLE_NAME)";
+			INFOPLIST_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Info.plist";
+			INFOPLISTSTRINGS_PATH = "$(LOCALIZED_RESOURCES_FOLDER_PATH)/InfoPlist.strings";
+			PKGINFO_PATH = "$(WRAPPER_NAME)/PkgInfo";
+			PBDEVELOPMENTPLIST_PATH = "$(CONTENTS_FOLDER_PATH)/pbdevelopment.plist";
+			VERSIONPLIST_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/version.plist";
+			PUBLIC_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Headers";
+			PRIVATE_HEADERS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/PrivateHeaders";
+			EXECUTABLES_FOLDER_PATH = "$(LOCALIZED_RESOURCES_FOLDER_PATH)";               // Not the same as EXECUTABLE_FOLDER_PATH
+			FRAMEWORKS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Frameworks";
+			SHARED_FRAMEWORKS_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/SharedFrameworks";
+			SHARED_SUPPORT_FOLDER_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)";
+			UNLOCALIZED_RESOURCES_FOLDER_PATH = "$(CONTENTS_FOLDER_PATH)/Resources";
+			LOCALIZED_RESOURCES_FOLDER_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/$(DEVELOPMENT_LANGUAGE).lproj";
+			DOCUMENTATION_FOLDER_PATH = "$(LOCALIZED_RESOURCES_FOLDER_PATH)/Documentation";
+			PLUGINS_FOLDER_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)";
+			SCRIPTS_FOLDER_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Scripts";
+			JAVA_FOLDER_PATH = "$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Java";
+			CODESIGNING_FOLDER_PATH = "$(TARGET_BUILD_DIR)/$(CONTENTS_FOLDER_PATH)";
+		};
+		ProductReference = {
+			FileType = wrapper.framework.static;
+			Name = "$(WRAPPER_NAME)";
+			IsLaunchable = NO;
+		};
+	},
+
+    {   Type = ProductType;
+        Identifier = com.apple.product-type.framework.static;
+        BasedOn = com.apple.product-type.bundle;
+        Class = XCStaticFrameworkProductType;
+        Name = "Static Framework";
+        Description = "Static Framework";
+        IconNamePrefix = "TargetFramework";
+        DefaultTargetName = "Static Framework";
+        DefaultBuildProperties = {
+            MACH_O_TYPE = "staticlib";
+            FRAMEWORK_VERSION = "A";
+            WRAPPER_SUFFIX = ".$(WRAPPER_EXTENSION)";
+            WRAPPER_EXTENSION = "framework";
+            INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+            DYLIB_INSTALL_NAME_BASE = "";
+            LD_DYLIB_INSTALL_NAME = "";
+            GCC_ENABLE_SYMBOL_SEPARATION = NO;
+            SEPARATE_STRIP = YES;
+            GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+            CODE_SIGNING_ALLOWED = NO;
+        };
+        AlwaysPerformSeparateStrip = YES;
+        PackageTypes = (
+            com.apple.package-type.wrapper.framework.static   // default
+        );
+    },
+
+)
+
