@@ -86,15 +86,19 @@ else
     exit 1
 fi
 
+ONLY_ACTIVE_PLATFORM=${ONLY_ACTIVE_PLATFORM:-$ONLY_ACTIVE_ARCH}
 
 # Short-circuit if all binaries are up to date
 
 if [[ -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; \
    [[ -f "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
-   [[ ! "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
-   [[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; \
-   [[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
-   [[ ! "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
+   [[ ! "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+  ([[ "${ONLY_ACTIVE_PLATFORM}" == "YES" ]] || \
+    ([[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+     [[ -f "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]] &amp;&amp; \
+     [[ ! "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -nt "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/${EXECUTABLE_PATH}" ]]
+    )
+  )
 then
     exit 0
 fi
@@ -102,7 +106,7 @@ fi
 
 # Clean other platform if needed
 
-if [[ ! -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]]
+if [[ ! -f "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" ]] &amp;&amp; [[ "${ONLY_ACTIVE_PLATFORM}" != "YES" ]]
 then
 	echo "Platform \"$UFW_SDK_PLATFORM\" was cleaned recently. Cleaning \"$UFW_OTHER_PLATFORM\" as well"
 	echo xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" clean
@@ -114,8 +118,12 @@ fi
 
 rm -rf "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
 rm -rf "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
-rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
-rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+
+if [[ "${ONLY_ACTIVE_PLATFORM}" != "YES" ]]
+then
+    rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+    rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
+fi
 </string>
                 </dict>
 				<dict>
@@ -214,6 +222,7 @@ else
     exit 1
 fi
 
+ONLY_ACTIVE_PLATFORM=${ONLY_ACTIVE_PLATFORM:-$ONLY_ACTIVE_ARCH}
 
 # Short-circuit if all binaries are up to date.
 # We already checked the other platform in the prerun script.
@@ -223,25 +232,28 @@ then
     exit 0
 fi
 
-
-# Make sure the other platform gets built
-
-echo "Build other platform"
-
-echo xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
-xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
-
-
-# Build the fat static library binary
-
-echo "Create universal static library"
-
-echo "$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
-"$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
-
-echo mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
-mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
-
+if [ "${ONLY_ACTIVE_PLATFORM}" == "YES" ]
+then
+    echo "ONLY_ACTIVE_PLATFORM=${ONLY_ACTIVE_PLATFORM}: Skipping other platform build"
+else
+    # Make sure the other platform gets built
+    
+    echo "Build other platform"
+    
+    echo xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
+    xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configuration "${CONFIGURATION}" -sdk ${UFW_OTHER_PLATFORM}${UFW_SDK_VERSION} BUILD_DIR="${BUILD_DIR}" CONFIGURATION_TEMP_DIR="${PROJECT_TEMP_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}" $ACTION
+    
+    
+    # Build the fat static library binary
+    
+    echo "Create universal static library"
+    
+    echo "$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
+    "$PLATFORM_DEVELOPER_BIN_DIR/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
+    
+    echo mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+    mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}"
+fi
 
 # Build embedded framework structure
 
@@ -266,14 +278,17 @@ do
 done
 
 
-# Replace other platform's framework with a copy of this one (so that both have the same universal binary)
-
-echo "Copy from $UFW_SDK_PLATFORM to $UFW_OTHER_PLATFORM"
-
-echo rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
-rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
-echo cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
-cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+if [ "${ONLY_ACTIVE_PLATFORM}" != "YES" ]
+then
+    # Replace other platform's framework with a copy of this one (so that both have the same universal binary)
+    
+    echo "Copy from $UFW_SDK_PLATFORM to $UFW_OTHER_PLATFORM"
+    
+    echo rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+    rm -rf "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+    echo cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+    cp -a "${BUILD_DIR}/${CONFIGURATION}-${UFW_SDK_PLATFORM}" "${BUILD_DIR}/${CONFIGURATION}-${UFW_OTHER_PLATFORM}"
+fi
 </string>
 				</dict>
 			</array>
