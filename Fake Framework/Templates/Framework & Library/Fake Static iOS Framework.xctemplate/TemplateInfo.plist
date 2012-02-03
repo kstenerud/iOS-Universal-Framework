@@ -158,6 +158,33 @@ rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
 					<key>ShowEnvVarsInLog</key>
 					<string>false</string>
 					<key>ShellScript</key>
+					<string>INLINED_PYHON_SCRIPT="import sys; import os.path; headerPathFromFind = sys.argv[2]; srcRoot = sys.argv[1]; headerPathFromFindWithoutFilename = os.path.dirname( headerPathFromFind ); relatedPathForDirectory = os.path.relpath( headerPathFromFindWithoutFilename, srcRoot ); print( relatedPathForDirectory );"
+
+HEADERS_ROOT=$SRCROOT/$PRODUCT_NAME
+FRAMEWORK_HEADERS_DIR="$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/Headers"
+
+## only header files expected at this point
+PUBLIC_HEADERS=$( ls -1 "$FRAMEWORK_HEADERS_DIR" )
+
+
+for PUBLIC_HEADER in $PUBLIC_HEADERS; do
+
+   FIND_RESULT=$( find "$HEADERS_ROOT" -name "$PUBLIC_HEADER" )
+   RELATIVE_PATH=$( python -c "$INLINED_PYHON_SCRIPT" "$HEADERS_ROOT" "$FIND_RESULT" )
+
+   mkdir -p "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH"
+   mv "$FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER" "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH/$PUBLIC_HEADER"
+done
+</string>
+			    </dict>				
+				<dict>
+					<key>Class</key>
+					<string>ShellScript</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>ShowEnvVarsInLog</key>
+					<string>false</string>
+					<key>ShellScript</key>
 					<string>set -e
 
 set +u
