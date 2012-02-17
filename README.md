@@ -60,27 +60,23 @@ weaknesses. You should choose whichever one best suits your needs and
 constraints (or just install both).
 
 The biggest difference is that Xcode can't build real frameworks unless you
-install the static framework xcspec file. This does NOT require modifications
-to Xcode itself, but rather the xcspec file gets installed off your home dir
-like the templates do. Anyone building that project must also have the xcspec
-file installed.
-
-**Note:** As of Mk 7, iOS Universal Framework no longer modifies Xcode when
-installing real framework support.
+install the static framework xcspec file inside the Xcode app, which might be
+a dealbreaker for some (this applies to the *PROJECT*, not the framework
+itself).
 
 
 ### Short decision chart for the impatient ###
 
-* I don't want to install the xcspec file: **Fake framework**
+* I don't want to modify Xcode: **Fake framework**
 
 * I'm just distributing the final framework binary (not the project):
   **Either kind will work**
 
 * I'm distributing my framework **project** to other developers who may not
-  want to install the xcspec file: **Fake framework**
+  want to modify Xcode: **Fake framework**
 
 * I'm distributing my framework **project** to other developers who will also
-  be installing the xcspec file: **Real framework**
+  be modifying Xcode: **Real framework**
 
 * I need to set up the framework project as a dependency of another project
   (in a workspace or as a child project): **Real framework**
@@ -147,12 +143,12 @@ The real framework is real in every sense of the word. It is a true static
 framework made by re-introducing specifications that Apple left out of Xcode.
 
 In order to be able to build a real framework project, you must install an
-xcspec file off your home dir (as of Mk 7 you no longer need to modify Xcode).
+xcspec file inside the Xcode installation.
 
 If you are releasing a **project** (rather than the built product) that builds
-a real framework, anyone who wishes to **build** that framework must install
-the xcspec file (using the install script in this distribution) so that their
-Xcode can understand the target type.
+a real framework, anyone who wishes to **build** that framework must also
+install the xcspec file (using the install script in this distribution) so
+that their Xcode can understand the target type.
 
 Note: If all you're doing is distributing the fully built framework, and not
 the framework's project, then the end user doesn't need to install anything.
@@ -505,13 +501,22 @@ ones.
 
 ### Mk 7
 
-This version no longer modifies Xcode, but instead installs the xcspec file
-in your local path.
+This version was *supposed* to be the one that no longer modified Xcode, but
+alas, Xcode behaves differently depending on *WHERE* the xcspec file gets
+installed. Take a guess at which location doesn't work...
+
+@wtfxcode
+
+So instead, this version basically handles the new install location of
+Xcode4.3.
 
 Templates now build armv6 + armv7 by default instead of just armv7.
 
-Users of Xcode 4.2.1 or earlier upgrading from Mk 6 or earlier should run
-**uninstall_legacy.sh** to return Xcode to its unmodified state.
+Note: If you previously installed real framework supprt under the broken Mk 7
+(i.e. if you installed it on Feb 16th, or Feb 17th before 9:00 am PST, 2012),
+run uninstall_legacy.sh to uninstall the xcspec file from your home dir, then
+reinstall.
+
 
 
 License
