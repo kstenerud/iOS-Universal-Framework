@@ -17,6 +17,7 @@ DEFAULT_GLOBAL_DEVELOPER_PATH="/Developer"
 GLOBAL_DEVELOPER_PATH="$DEFAULT_GLOBAL_DEVELOPER_PATH"
 
 SPECIFICATIONS_DIR="Developer/Library/Xcode/Specifications"
+SPECIFICATIONS_FILE="UFW-iOSStaticFramework.xcspec"
 
 IOS_PATCH_FILE="$SCRIPT_DIR/legacy/iphone_specifications.diff"
 SIM_PATCH_FILE="$SCRIPT_DIR/legacy/simulator_specifications.diff"
@@ -30,13 +31,12 @@ SIM_SPECIFICATIONS_DST_PATH="$GLOBAL_DEVELOPER_PATH/$SIM_SPECIFICATIONS_PATH"
 echo "iOS Real Static Framework Legacy Patch Uninstaller"
 echo "=================================================="
 echo
-echo "This will remove any legacy Xcode patches on your computer."
+echo "This will remove any legacy Real Framework files/patches in your Xcode
+echo "installation."
 echo
-echo "Note: This script is only needed if you have installed the Real Static"
-echo "      Framework templates using Mk 5 or earlier."
-echo
-echo "WARNING: Only run this script if you are upgrading from"
-echo "         iOS-Universal-Framework Mk 5 or earlier!"
+echo "Note: This script is only needed if you have previously installed the
+echo "      Real Static Framework templates Mk 6 or earlier. It will do nothing"
+echo "      on later versions."
 echo
 
 
@@ -71,6 +71,8 @@ done
 
 IOS_PATCHES_PRESENT=0
 SIM_PATCHES_PRESENT=0
+IOS_SPEC_PRESENT=0
+SIM_SPEC_PRESENT=0
 set +e
 
 cd "$IOS_SPECIFICATIONS_DST_PATH"
@@ -90,7 +92,17 @@ fi
 
 set -e
 
-if [ "$IOS_PATCHES_PRESENT" == "0" ] && [ "$SIM_PATCHES_PRESENT" == "0" ]
+if [ -f "$IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE" ]
+then
+	IOS_SPEC_PRESENT=1
+fi
+
+if [ -f "$SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE" ]
+then
+	SIM_SPEC_PRESENT=1
+fi
+
+if [ "$IOS_PATCHES_PRESENT" == "0" ] && [ "$SIM_PATCHES_PRESENT" == "0" ] && [ "$IOS_SPEC_PRESENT" == "0" ] && [ "$SIM_SPEC_PRESENT" == "0" ]
 then
     echo
     echo "Xcode install at $GLOBAL_DEVELOPER_PATH does not contain legacy specification data"
@@ -112,6 +124,14 @@ then
     echo " * $SIM_SPECIFICATIONS_DST_PATH/iPhoneOSPackageTypes.xcspec"
     echo " * $SIM_SPECIFICATIONS_DST_PATH/iPhoneOSProductTypes.xcspec"
 fi
+if [ "$IOS_SPEC_PRESENT" == "1" ]
+then
+    echo " * $IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+fi
+if [ "$SIM_SPEC_PRESENT" == "1" ]
+then
+    echo " * $SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+fi
 echo
 
 read -p "continue [y/N]: " answer
@@ -121,24 +141,6 @@ if [ "$answer" != "Y" ] && [ "$answer" != "y" ]; then
     echo "[ Cancelled ]"
     echo
     exit 1
-fi
-
-
-if [ ! -f "$IOS_SPECIFICATIONS_DST_PATH/iPhoneOSPackageTypes.xcspec.orig" ]
-then
-    echo "WARNING: Did not find .orig files in $IOS_SPECIFICATIONS_DST_PATH"
-    echo "Are you SURE you installed an older version of iOS-Universal-Framework in $GLOBAL_DEVELOPER_PATH?"
-    echo
-    echo "If you've reinstalled Xcode, you don't need to run this script."
-    echo
-	read -p "Really continue [y/N]: " answer
-	echo
-	if [ "$answer" != "Y" ] && [ "$answer" != "y" ]; then
-		echo
-		echo "[ Cancelled ]"
-		echo
-		exit 1
-	fi
 fi
 
 
@@ -165,6 +167,17 @@ then
     patch -p1 -b -R -N <"$SIM_PATCH_FILE"
 fi
 
+if [ "$IOS_SPEC_PRESENT" == "1" ]
+then
+    echo rm -f "$IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+    rm -f "$IOS_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+fi
+
+if [ "$SIM_SPEC_PRESENT" == "1" ]
+then
+    echo rm -f "$SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+    rm -f "$SIM_SPECIFICATIONS_DST_PATH/$SPECIFICATIONS_FILE"
+fi
 
 echo
 echo

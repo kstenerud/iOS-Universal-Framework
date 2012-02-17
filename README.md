@@ -1,4 +1,4 @@
-iOS Universal Framework Mk 5
+iOS Universal Framework Mk 7
 ============================
 
 An XCode 4 project template to build universal (arm6, arm7, and simulator)
@@ -59,15 +59,28 @@ In this distribution are two template systems, each with their strengths and
 weaknesses. You should choose whichever one best suits your needs and
 constraints (or just install both).
 
+The biggest difference is that Xcode can't build real frameworks unless you
+install the static framework xcspec file. This does NOT require modifications
+to Xcode itself, but rather the xcspec file gets installed off your home dir
+like the templates do. Anyone building that project must also have the xcspec
+file installed.
+
+**Note:** As of Mk 7, iOS Universal Framework no longer modifies Xcode when
+installing real framework support.
+
+
 ### Short decision chart for the impatient ###
 
-* I can't (or won't) modify my Xcode installation: **Fake framework**
+* I don't want to install the xcspec file: **Fake framework**
 
 * I'm just distributing the final framework binary (not the project):
   **Either kind will work**
 
 * I'm distributing my framework **project** to other developers who may not
-  want to modify their Xcode install: **Fake framework**
+  want to install the xcspec file: **Fake framework**
+
+* I'm distributing my framework **project** to other developers who will also
+  be installing the xcspec file: **Real framework**
 
 * I need to set up the framework project as a dependency of another project
   (in a workspace or as a child project): **Real framework**
@@ -133,15 +146,16 @@ themselves.
 The real framework is real in every sense of the word. It is a true static
 framework made by re-introducing specifications that Apple left out of Xcode.
 
-In order to be able to build a real framework project, you must modify Xcode's
-specification files, which may not be desirable, or even possible due to
-restrictions your organization may place upon development environments.
-Also, if you are releasing a project that builds a real framework, anyone
-who wishes to **build** that framework must modify their Xcode as well (via
-the install script in this distribution).
+In order to be able to build a real framework project, you must install an
+xcspec file off your home dir (as of Mk 7 you no longer need to modify Xcode).
 
-If all you're doing is distributing the fully built framework, and not the
-framework's project, then the end user doesn't need to modify Xcode.
+If you are releasing a **project** (rather than the built product) that builds
+a real framework, anyone who wishes to **build** that framework must install
+the xcspec file (using the install script in this distribution) so that their
+Xcode can understand the target type.
+
+Note: If all you're doing is distributing the fully built framework, and not
+the framework's project, then the end user doesn't need to install anything.
 
 I've submitted a report to Apple in the hopes that they'll update the
 specification files in Xcode, but that could take awhile.
@@ -158,12 +172,13 @@ the final framework binary like they would in a fake framework.
 Upgrading from previous iOS-Universal-Framework versions
 --------------------------------------------------------
 
-If you are upgrading from iOS-Universal-Framework **Mk 5 or earlier** and were
-using the **Real Static Framework**, please run "uninstall_legacy.sh" to remove
-any patches that were previously applied to Xcode.
+If you are upgrading from iOS-Universal-Framework **Mk 6 or earlier** and were
+using the **Real Static Framework**, and are still using **Xcode 4.2.1** or
+earlier, please run **uninstall_legacy.sh** first to remove any patches that
+were previously applied to Xcode, then run **install.sh** and restart Xcode.
 
-The new real framework template system uses a cleaner approach to avoid
-possible conflicts with future versions of Xcode.
+If you are using **Xcode 4.3** or later, just run **install.sh** and restart
+Xcode.
 
 
 
@@ -171,13 +186,12 @@ Installing the Template System
 ------------------------------
 
 To install, run the **install.sh** script in either the "Real Framework" or
-"Fake Framework" dir (or both).
+"Fake Framework" folder (or both).
 
 Now restart Xcode and you'll see **Static iOS Framework** (or **Fake Static
 iOS Framework**) under **Framework & Library** when creating a new project.
 
 To uninstall, run the **uninstall.sh** script and restart Xcode.
-
 
 
 Creating an iOS Framework Project
@@ -205,8 +219,9 @@ Building your iOS Framework
 
 1. Select your framework's scheme (any of its targets will do).
 
-2. (optional) Set the "Run" configuration in the scheme editor
-   (It's set to Debug by default).
+2. (optional) Set the "Run" configuration in the scheme editor.
+   It's set to Debug by default but you'll probably want to change it to
+   "Release" when you're ready to distribute your framework.
 
 3. Build the framework (both "iOS device" and "Simulator" destinations will
    build the same universal binary, so it doesn't matter which you select).
@@ -340,12 +355,15 @@ In MyViewController:
    
     + (void) initialize
     {
-        [super initialize];
         [MyTextField forceLinkerLoad_];
     }
 
+They will still need to add "-ObjC" to their linker settings, but won't need
+to force all_load.
+
 Option 2 is more work for you, but if done right it saves the end user from
-having to disable linker optimizations just to use your framework.
+having to disable linker optimizations (causing object file bloat) just to use
+your framework.
 
 
 ### unexpected file type 'wrapper.cfbundle' in Frameworks & Libraries build phase ###
@@ -484,9 +502,16 @@ This version makes the Xcode modifications for real static frameworks safer
 by simply adding an extra specification file instead of patching existing
 ones.
 
-Users upgrading from Mk 3, Mk 4, or Mk 5 can run "uninstall_legacy.sh" to
-unpatch Xcode.
 
+### Mk 7
+
+This version no longer modifies Xcode, but instead installs the xcspec file
+in your local path.
+
+Templates now build armv6 + armv7 by default instead of just armv7.
+
+Users of Xcode 4.2.1 or earlier upgrading from Mk 6 or earlier should run
+**uninstall_legacy.sh** to return Xcode to its unmodified state.
 
 
 License

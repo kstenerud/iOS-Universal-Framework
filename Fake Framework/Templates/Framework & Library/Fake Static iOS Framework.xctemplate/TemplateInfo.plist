@@ -24,6 +24,8 @@
 			<string>com.apple.product-type.bundle</string>
 			<key>SharedSettings</key>
 			<dict>
+				<key>ARCHS</key>
+				<string>armv6 $(ARCHS_STANDARD_32_BIT)</string>
 				<key>WRAPPER_EXTENSION</key>
 				<string>framework</string>
 				<key>FRAMEWORK_VERSION</key>
