@@ -430,6 +430,21 @@ You will also need to add "-ObjC" to the "Other Linker Flags" build setting in
 any project that uses the framework.
 
 
+### Unit tests crash before executing any code ###
+
+If you make a new static framework (or static library) target with unit tests
+in Xcode 4.3, it will crash when you try to run the unit tests:
+
+    Thread 1: EXC_BAD_ACCESS (code=2, address=0x0)
+    0 0x00000000
+    ---
+    15 dyldbootstrap:start(...)
+
+This is due to a bug in lldb. You can run the unit tests using GDB instead by
+editing your scheme, selecting "Test", and from the "Info" tab changing
+Debugger from **LLDB** to **GDB**.
+
+
 
 History
 -------
