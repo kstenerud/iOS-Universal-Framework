@@ -36,8 +36,6 @@
 				<string>1</string>
 				<key>SKIP_INSTALL</key>
 				<string>YES</string>
-				<key>DEPLOYMENT_POSTPROCESSING</key>
-				<string>YES</string>
 				<key>MACH_O_TYPE</key>
 				<string>mh_object</string>
 				<key>DEAD_CODE_STRIPPING</key>
