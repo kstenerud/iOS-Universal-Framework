@@ -164,7 +164,7 @@ HEADERS_ROOT=$SRCROOT/$PRODUCT_NAME
 FRAMEWORK_HEADERS_DIR="$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/Versions/$FRAMEWORK_VERSION/Headers"
 
 ## only header files expected at this point
-PUBLIC_HEADERS=$( ls -1 "$FRAMEWORK_HEADERS_DIR" 2> /dev/null )
+PUBLIC_HEADERS=$(find "$FRAMEWORK_HEADERS_DIR/." -not -type d 2> /dev/null | sed -e "s@^$FRAMEWORK_HEADERS_DIR/./@@g")
 
 
 for PUBLIC_HEADER in $PUBLIC_HEADERS; do
