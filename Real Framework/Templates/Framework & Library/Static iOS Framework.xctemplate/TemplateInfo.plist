@@ -306,8 +306,8 @@ for filename in "${UFW_FILE_LIST[@]}"
 do
     if [[ "${filename}" != "Info.plist" ]] &amp;&amp; [[ ! "${filename}" =~ .*\.lproj$ ]]
     then
-        echo ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
-        ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+        echo ln -sfh "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+        ln -sfh "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
     fi
 done
 
