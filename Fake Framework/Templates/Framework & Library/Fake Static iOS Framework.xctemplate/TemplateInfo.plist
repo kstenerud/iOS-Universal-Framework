@@ -169,7 +169,7 @@ for PUBLIC_HEADER in $PUBLIC_HEADERS; do
   if [ -n "$FIND_OPTS" ]; then
     FIND_OPTS="$FIND_OPTS -o"
   fi
-  FIND_OPTS="$FIND_OPTS -name $PUBLIC_HEADER"
+  FIND_OPTS="$FIND_OPTS -name '$PUBLIC_HEADER'"
 done
 
 if [ -n "$FIND_OPTS" ]; then
