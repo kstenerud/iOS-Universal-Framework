@@ -172,14 +172,16 @@ for PUBLIC_HEADER in $PUBLIC_HEADERS; do
   FIND_OPTS="$FIND_OPTS -name $PUBLIC_HEADER"
 done
 
-for ORIG_HEADER in $(eval "find $HEADERS_ROOT/. $FIND_OPTS" | sed -e "s@^$HEADERS_ROOT/./@@g"); do
-  PUBLIC_HEADER=$(basename $ORIG_HEADER)
-  RELATIVE_PATH=$(dirname $ORIG_HEADER)
-  if [ -e $FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER ]; then
-    mkdir -p "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH"
-    mv "$FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER" "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH/$PUBLIC_HEADER"
-  fi
-done
+if [ -n "$FIND_OPTS" ]; then
+  for ORIG_HEADER in $(eval "find $HEADERS_ROOT/. $FIND_OPTS" 2> /dev/null | sed -e "s@^$HEADERS_ROOT/./@@g"); do
+    PUBLIC_HEADER=$(basename $ORIG_HEADER)
+    RELATIVE_PATH=$(dirname $ORIG_HEADER)
+    if [ -e $FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER ]; then
+      mkdir -p "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH"
+      mv "$FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER" "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH/$PUBLIC_HEADER"
+    fi
+  done
+fi
 </string>
 			    </dict>				
 				<dict>
