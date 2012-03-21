@@ -158,23 +158,30 @@ rm -rf "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework"
 					<key>ShowEnvVarsInLog</key>
 					<string>false</string>
 					<key>ShellScript</key>
-					<string>INLINED_PYTHON_SCRIPT="import sys; import os.path; headerPathFromFind = sys.argv[2]; srcRoot = sys.argv[1]; headerPathFromFindWithoutFilename = os.path.dirname( headerPathFromFind ); relatedPathForDirectory = os.path.relpath( headerPathFromFindWithoutFilename, srcRoot ); print( relatedPathForDirectory );"
-
-HEADERS_ROOT=$SRCROOT/$PRODUCT_NAME
+					<string>HEADERS_ROOT=$SRCROOT/$PRODUCT_NAME
 FRAMEWORK_HEADERS_DIR="$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/Versions/$FRAMEWORK_VERSION/Headers"
 
 ## only header files expected at this point
-PUBLIC_HEADERS=$(find "$FRAMEWORK_HEADERS_DIR/." -not -type d 2> /dev/null | sed -e "s@^$FRAMEWORK_HEADERS_DIR/./@@g")
+PUBLIC_HEADERS=$(find $FRAMEWORK_HEADERS_DIR/. -not -type d 2> /dev/null | sed -e "s@.*/@@g")
 
-
+FIND_OPTS=""
 for PUBLIC_HEADER in $PUBLIC_HEADERS; do
-
-   FIND_RESULT=$( find "$HEADERS_ROOT" -name "$PUBLIC_HEADER" )
-   RELATIVE_PATH=$( python -c "$INLINED_PYTHON_SCRIPT" "$HEADERS_ROOT" "$FIND_RESULT" )
-
-   mkdir -p "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH"
-   mv "$FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER" "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH/$PUBLIC_HEADER"
+  if [ -n "$FIND_OPTS" ]; then
+    FIND_OPTS="$FIND_OPTS -o"
+  fi
+  FIND_OPTS="$FIND_OPTS -name $PUBLIC_HEADER"
 done
+
+if [ -n "$FIND_OPTS" ]; then
+  for ORIG_HEADER in $(eval "find $HEADERS_ROOT/. $FIND_OPTS" 2> /dev/null | sed -e "s@^$HEADERS_ROOT/./@@g"); do
+    PUBLIC_HEADER=$(basename $ORIG_HEADER)
+    RELATIVE_PATH=$(dirname $ORIG_HEADER)
+    if [ -e $FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER ]; then
+      mkdir -p "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH"
+      mv "$FRAMEWORK_HEADERS_DIR/$PUBLIC_HEADER" "$FRAMEWORK_HEADERS_DIR/$RELATIVE_PATH/$PUBLIC_HEADER"
+    fi
+  done
+fi
 </string>
 			    </dict>				
 				<dict>
@@ -290,20 +297,20 @@ mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXEC
 
 echo "Build symlinks"
 
-echo ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
-ln -sf A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
-echo ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
-ln -sf Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
-echo ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
-ln -sf Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
-echo ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
-ln -sf "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
+echo ln -sfh A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+ln -sfh A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+echo ln -sfh Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
+ln -sfh Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
+echo ln -sfh Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
+ln -sfh Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
+echo ln -sfh "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
+ln -sfh "Versions/Current/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/${EXECUTABLE_NAME}"
 
 
 # Link to binary for unit tests
 
 mkdir -p "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework"
-ln -sf "../${WRAPPER_NAME}/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework/.fake_fw_testing"
+ln -sfh "../${WRAPPER_NAME}/${EXECUTABLE_NAME}" "${BUILT_PRODUCTS_DIR}/.fake_fw_testing.framework/.fake_fw_testing"
 
 
 # Build embedded framework structure
@@ -323,8 +330,8 @@ for filename in "${UFW_FILE_LIST[@]}"
 do
     if [[ "${filename}" != "Info.plist" ]] &amp;&amp; [[ ! "${filename}" =~ .*\.lproj$ ]]
     then
-        echo ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
-        ln -sf "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+        echo ln -sfh "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
+        ln -sfh "../${WRAPPER_NAME}/Resources/${filename}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.embeddedframework/Resources/${filename}"
     fi
 done
 
