@@ -1,151 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>Kind</key>
-	<string>Xcode.Xcode3.ProjectTemplateUnitKind</string>
-	<key>Identifier</key>
-	<string>org.stenerud.iosStaticFramework</string>
-	<key>Concrete</key>
-	<true/>
-	<key>Description</key>
-	<string>This template builds a static iOS framework.</string>
-	<key>SortOrder</key>
-	<integer>5</integer>
-	<key>Ancestors</key>
-	<array>
-		<string>com.apple.dt.unit.bundleBase</string>
-		<string>com.apple.dt.unit.iPhoneBase</string>
-	</array>
-	<key>Targets</key>
-	<array>
-		<dict>
-			<key>ProductType</key>
-			<string>com.apple.product-type.framework</string>
-			<key>SharedSettings</key>
-			<dict>
-				<key>ARCHS</key>
-				<string>armv6 $(ARCHS_STANDARD_32_BIT)</string>
-				<key>WRAPPER_EXTENSION</key>
-				<string>framework</string>
-				<key>FRAMEWORK_VERSION</key>
-				<string>A</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-			</dict>
-			<key>BuildPhases</key>
-			<array>
-				<dict>
-					<key>Class</key>
-					<string>ShellScript</string>
-					<key>ShellPath</key>
-					<string>/usr/bin/python</string>
-					<key>ShowEnvVarsInLog</key>
-					<string>false</string>
-					<key>ShellScript</key>
-					<string>import logging
-import os
-import subprocess
-
-log = logging.getLogger('UFW')
-
-def get_slave_environment(local_platform, other_platform):
-    ignored = ['LD_MAP_FILE_PATH']
-    build_root = os.environ['BUILD_ROOT']
-    temp_root = os.environ['TEMP_ROOT']
-    newenv = {}
-    for key, value in os.environ.items():
-        if key not in ignored and not key.startswith('LINK_FILE_LIST_'):
-            if build_root in value or temp_root in value:
-                newenv[key] = value.replace(local_platform, other_platform)
-    return newenv
-
-def get_other_platform():
-    local_platform = os.environ['PLATFORM_NAME']
-    other_platforms = os.environ['SUPPORTED_PLATFORMS'].split(' ')
-    other_platforms.remove(local_platform)
-    return other_platforms[0]
-
-def get_slave_project_clean_command():
-    local_platform = os.environ['PLATFORM_NAME']
-    other_platform = get_other_platform()
-
-    sdk_version = os.environ['SDK_NAME']
-    if not sdk_version.startswith(local_platform):
-        raise Exception("%s didn't start with %s" % (sdk_version, local_platform))
-    sdk_version = sdk_version[len(local_platform):]
-
-    cmd = ["xcodebuild",
-           "-project",
-           os.environ['PROJECT_FILE_PATH'],
-           "-target",
-           os.environ['TARGET_NAME'],
-           "-configuration",
-           os.environ['CONFIGURATION'],
-           "-sdk",
-           other_platform + sdk_version]
-    cmd += ["%s=%s" % (key, value) for key, value in get_slave_environment(local_platform, other_platform).items()]
-    cmd += ["UFW_MASTER_PLATFORM=" + os.environ['PLATFORM_NAME']]
-    cmd += ['clean']
-    return cmd
-
-def print_and_call_slave_build(cmd):
-    separator = '=== CLEAN NATIVE TARGET '
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    result = p.communicate()[0].split(separator)
-    if len(result) == 1:
-        result = result[0]
-    else:
-        result = separator + result[1]
-    log.info("Cmd " + " ".join(cmd) + "\n" + result)
-    if p.returncode != 0:
-        raise subprocess.CalledProcessError(p.returncode, cmd)
-
-def is_master():
-    return os.environ.get('UFW_MASTER_PLATFORM', os.environ['PLATFORM_NAME']) == os.environ['PLATFORM_NAME']
-
-if __name__ == "__main__":
-    exe_path = os.environ['BUILT_PRODUCTS_DIR'] + "/" + os.environ['EXECUTABLE_PATH']
-
-    log_handler = logging.StreamHandler()
-    log_handler.setFormatter(logging.Formatter("%(name)s (M " + os.environ['PLATFORM_NAME'] + "): %(levelname)s: %(message)s"))
-    log.addHandler(log_handler)
-    log.setLevel(logging.INFO)
-
-    if is_master() and not os.path.exists(exe_path):
-        log.info("Platform %s was cleaned. Cleaning %s as well." % (os.environ['PLATFORM_NAME'], get_other_platform()))
-        print_and_call_slave_build(get_slave_project_clean_command())
-</string>
-                </dict>
-				<dict>
-					<key>Class</key>
-					<string>Sources</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Frameworks</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Headers</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Resources</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>ShellScript</string>
-					<key>ShellPath</key>
-					<string>/usr/bin/python</string>
-					<key>ShowEnvVarsInLog</key>
-					<string>false</string>
-					<key>ShellScript</key>
-					<string>import logging
+import logging
 
 
 ### Configuration ###
@@ -384,7 +237,7 @@ class Project:
     # Fix up any inconvenient keys
     def fix_keys(self, obj):
         key_remappings = {'lastKnownFileType': 'fileType', 'explicitFileType': 'fileType'}
-        for key in list(set(key_remappings.keys()) &amp; set(obj.keys())):
+        for key in list(set(key_remappings.keys()) & set(obj.keys())):
             obj[key_remappings[key]] = obj[key]
             del obj[key]
 
@@ -401,7 +254,7 @@ class Project:
     #
     def movable_headers_relative_to(self, relative_path):
         rel_path_length = len(relative_path)
-        result = filter(lambda path: len(path) &gt;= rel_path_length and
+        result = filter(lambda path: len(path) >= rel_path_length and
                                      path[:rel_path_length] == relative_path, self.header_paths)
         return [path[rel_path_length:] for path in result]
 
@@ -531,7 +384,7 @@ def attempt_symlink(link_path, link_to):
 
     # Only make the link if it hasn't already been made
     if not os.path.exists(link_path):
-        log.info("Symlink %s -&gt; %s" % (link_path, link_to))
+        log.info("Symlink %s -> %s" % (link_path, link_to))
         os.symlink(link_to, link_path)
 
 # Takes the last entry in an array-based path and returns a normal path
@@ -596,7 +449,7 @@ def are_link_targets_clean(project):
         for arch in project.local_architectures:
             link_time = os.path.getmtime(project.get_linked_archive_path(arch))
             ufw_time = os.path.getmtime(project.get_linked_ufw_archive_path(arch))
-            if not link_time or not ufw_time or link_time &gt; ufw_time:
+            if not link_time or not ufw_time or link_time > ufw_time:
                 return False
     except OSError:
         return False
@@ -671,7 +524,7 @@ def run_build(build_state):
             issue_warning('No headers in build target %s were marked public. Please move at least one header to "Public" in the "Copy Headers" build phase.' % os.environ['TARGET_NAME'])
 
         if os.path.exists(project.local_exe_path):
-            rebuild_needed = os.path.getmtime(project.local_exe_path) &gt; build_state.last_completion
+            rebuild_needed = os.path.getmtime(project.local_exe_path) > build_state.last_completion
     else:
         log.debug("Building as SLAVE")
 
@@ -739,93 +592,3 @@ if __name__ == "__main__":
     finally:
         build_state.persist()
         sys.exit(error_code)
-</string>
-				</dict>
-			</array>
-			<key>Frameworks</key>
-			<array>
-				<string>Foundation</string>
-			</array>
-            <key>ProductType</key>
-            <string>com.apple.product-type.framework.static</string>
-		</dict>
-	</array>
-	<key>Options</key>
-	<array>
-		<dict>
-			<key>Identifier</key>
-			<string>includeUnitTests</string>
-			<key>Name</key>
-			<string>Include Unit Tests</string>
-			<key>Description</key>
-			<string>Indicates whether a unit test bundle should be created.</string>
-			<key>Type</key>
-			<string>checkbox</string>
-			<key>SortOrder</key>
-			<integer>1</integer>
-			<key>Default</key>
-			<string>true</string>
-			<key>Units</key>
-			<dict>
-				<key>true</key>
-				<array>
-					<dict>
-						<key>Components</key>
-						<array>
-							<dict>
-								<key>Identifier</key>
-								<string>org.stenerud.iosStaticFrameworkUnitTestBundle</string>
-								<key>Name</key>
-								<string>___PACKAGENAME___Tests</string>
-							</dict>
-						</array>
-					</dict>
-				</array>
-			</dict>
-		</dict>
-	</array>
-	<key>Nodes</key>
-	<array>
-		<string>___PACKAGENAME___-Prefix.pch:objC:importFoundation</string>
-		<string>___PACKAGENAME___-Info.plist:iosStaticFramework</string>
-		<string>___PACKAGENAME___-Info.plist:NSHumanReadableCopyright</string>
-        <string>___PACKAGENAMEASIDENTIFIER___.h</string>
-        <string>___PACKAGENAMEASIDENTIFIER___.m</string>
-	</array>
-	<key>Definitions</key>
-	<dict>
-        <key>___PACKAGENAMEASIDENTIFIER___.h</key>
-        <dict>
-                <key>Path</key>
-                <string>___PACKAGENAMEASIDENTIFIER___.h</string>
-        </dict>
-        <key>___PACKAGENAMEASIDENTIFIER___.m</key>
-        <dict>
-                <key>Path</key>
-                <string>___PACKAGENAMEASIDENTIFIER___.m</string>
-        </dict>
-		<key>___PACKAGENAME___-Info.plist:iosStaticFramework</key>
-		<string>&lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
-&lt;string&gt;English&lt;/string&gt;
-&lt;key&gt;CFBundleExecutable&lt;/key&gt;
-&lt;string&gt;${EXECUTABLE_NAME}&lt;/string&gt;
-&lt;key&gt;CFBundleName&lt;/key&gt;
-&lt;string&gt;${PRODUCT_NAME}&lt;/string&gt;
-&lt;key&gt;CFBundleIconFile&lt;/key&gt;
-&lt;string&gt;&lt;/string&gt;
-&lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
-&lt;string&gt;6.0&lt;/string&gt;
-&lt;key&gt;CFBundlePackageType&lt;/key&gt;
-&lt;string&gt;FMWK&lt;/string&gt;
-&lt;key&gt;CFBundleSignature&lt;/key&gt;
-&lt;string&gt;????&lt;/string&gt;
-&lt;key&gt;CFBundleVersion&lt;/key&gt;
-&lt;string&gt;1&lt;/string&gt;
-&lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
-&lt;string&gt;1.0&lt;/string&gt;
-&lt;key&gt;NSPrincipalClass&lt;/key&gt;
-&lt;string&gt;&lt;/string&gt;
-</string>
-	</dict>
-</dict>
-</plist>
