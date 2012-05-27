@@ -9,6 +9,20 @@ frameworks for iOS.
 By Karl Stenerud
 
 
+News
+----
+
+#### 2012-05-26 - iOS Universal Framework Mk 8 in Beta!
+
+##### Highlights:
+
+- Complete rewrite. Build scripts are now written in Python, and read the project file directly.
+- Real and Fake framework projects now build the exact same thing.
+- Build script has configuration section to allow more fine-grained control over the build process.
+
+To participate in the beta, switch over to the "beta" branch!
+
+
 
 Why a Framework?
 ----------------
