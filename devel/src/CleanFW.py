@@ -60,6 +60,8 @@ def is_master():
     return os.environ.get('UFW_MASTER_PLATFORM', os.environ['PLATFORM_NAME']) == os.environ['PLATFORM_NAME']
 
 if __name__ == "__main__":
+    # TAG: CLEAN SCRIPT (do not remove this comment)
+
     exe_path = os.environ['BUILT_PRODUCTS_DIR'] + "/" + os.environ['EXECUTABLE_PATH']
 
     log_handler = logging.StreamHandler()

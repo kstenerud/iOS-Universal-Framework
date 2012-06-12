@@ -486,8 +486,10 @@ def build_deep_header_hierarchy(project):
 def add_symlinks_to_framework(project):
     base_dir = project.local_built_fw_path + "/"
     attempt_symlink(base_dir + "Versions/Current", os.environ['FRAMEWORK_VERSION'])
-    attempt_symlink(base_dir + "Headers", "Versions/Current/Headers")
-    attempt_symlink(base_dir + "Resources", "Versions/Current/Resources")
+    if os.path.isdir(base_dir + "Versions/Current/Headers"):
+        attempt_symlink(base_dir + "Headers", "Versions/Current/Headers")
+    if os.path.isdir(base_dir + "Versions/Current/Resources"):
+        attempt_symlink(base_dir + "Resources", "Versions/Current/Resources")
     attempt_symlink(base_dir + os.environ['EXECUTABLE_NAME'], "Versions/Current/" + os.environ['EXECUTABLE_NAME'])
 
 def run_slave_build(project):
@@ -503,8 +505,9 @@ def build_embedded_framework(project):
     ensure_path_exists(embedded_path + "/Resources")
     symlink_source = "../" + fw_name + "/Resources/"
     symlink_path = embedded_path + "/Resources/"
-    for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(fw_path + "/Resources")):
-        attempt_symlink(symlink_path + file, symlink_source + file)
+    if os.path.isdir(fw_path + "/Resources"):
+        for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(fw_path + "/Resources")):
+            attempt_symlink(symlink_path + file, symlink_source + file)
 
 def run_build(build_state):
 
@@ -560,6 +563,7 @@ def run_build(build_state):
 
 
 if __name__ == "__main__":
+    # TAG: BUILD SCRIPT (do not remove this comment)
 
     log_handler = logging.StreamHandler()
     log_handler.setFormatter(logging.Formatter("%(name)s (" + os.environ['PLATFORM_NAME'] + "): %(levelname)s: %(message)s"))
