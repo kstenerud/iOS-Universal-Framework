@@ -15,8 +15,10 @@
 		<dict>
             <key>SharedSettings</key>
             <dict>
-            <key>OTHER_LDFLAGS</key>
-            <string>-framework SenTestingKit -framework .fake_fw_testing</string>
+                <key>UFW_FAKE_FRAMEWORK_NAME</key>
+                <string>___PARENTPACKAGENAME___</string>
+                <key>OTHER_LDFLAGS</key>
+                <string>-framework SenTestingKit -framework $(UFW_FAKE_FRAMEWORK_NAME)</string>
             </dict>
 		</dict>
 	</array>
