@@ -12,6 +12,30 @@ By Karl Stenerud
 Beta Notes
 ----------
 
+
+### 2012-06-12:
+
+#### New Build Process
+
+When you build normally (by selecting Build or CMD-B), the project will **NO
+LONGER** build a universal framework. It will build for the **CURRENT
+ARCHITECTURE ONLY**!
+
+To build a universal framework, you must select **Archive** from the
+**Product** menu. Upon completing the archive build, it will automatically open
+the folder containing the fully built framework.
+
+This cuts the compilation time down by 2/3, since it no longer has to do a full
+build process when building as a dependency.
+
+### Only One Script
+
+The initial beta version had 2 scripts: a clean script and a build script. Mk 7
+has 3 scripts. With the new build process there is only need for one script.
+
+
+### Older stuff:
+
 #### Xcode Bugs and their Workarounds
 
 When Xcode creates the initial header and module file for a framework, the
@@ -252,16 +276,12 @@ Creating an iOS Framework Project
 Building your iOS Framework
 ---------------------------
 
-1. Select your framework's scheme (any of its targets will do).
+1. Select your framework's scheme, iOS Device target.
 
-2. (optional) Set the "Run" configuration in the scheme editor.
-   It's set to Debug by default but you'll probably want to change it to
-   "Release" when you're ready to distribute your framework.
+2. Under **Product**, select **Archive**.
 
-3. Build the framework (both "iOS device" and "Simulator" destinations will
-   build the same universal binary, so it doesn't matter which you select).
-
-4. Select your framework under "Products", then show in Finder.
+3. When the build finishes, it will open the folder containing the framework
+   and embedded framework variants in Finder.
 
 There will be two folders in the build location: **(your framework).framework**
 and **(your framework).embeddedframework**
@@ -583,6 +603,11 @@ reinstall.
 
 This version replaces the bash scripts with Python scripts. This gives a LOT
 more control over the build process.
+
+To build the universal version of your framework, you must now use the
+**Archive** command rather than the **Build** command.  **Build** only builds
+for the current architecture (to speed up compilation when your framework
+project is a dependency of another project).
 
 Added a devel folder for template development.
 
