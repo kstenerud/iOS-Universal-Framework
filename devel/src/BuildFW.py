@@ -1,4 +1,5 @@
 # TAG: BUILD SCRIPT (do not remove this comment)
+# Build script generated using https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
 import logging
 
 
