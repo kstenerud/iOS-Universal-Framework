@@ -28,6 +28,15 @@ the folder containing the fully built framework.
 This cuts the compilation time down by 2/3, since it no longer has to do a full
 build process when building as a dependency.
 
+#### Building From Command Line
+
+Since "archive" is not a supported xcodebuild build action, you must specify
+the env variable "UFW_ACTION=archive" in your xcodebuild command to build it as
+a universal framework.
+
+To avoid opening the destination folder when building from command line, set
+the env variable "UFW_OPEN_BUILD_DIR=False" in your xcodebuild command.
+
 ### Only One Script
 
 The initial beta version had 2 scripts: a clean script and a build script. Mk 7

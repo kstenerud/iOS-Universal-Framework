@@ -2,7 +2,11 @@
 import logging
 
 
-### Configuration ###
+##############################################################################
+#
+# Configuration
+#
+##############################################################################
 
 # Minimum log level
 #
@@ -65,6 +69,15 @@ config_warn_no_public_headers = True
 #
 config_fail_on_warnings = True
 
+# Open the build directory in Finder when the universal framework is
+# successfully built.
+#
+# This value can be overridden by setting the UFW_OPEN_BUILD_DIR env variable
+# to True or False.
+#
+# Recommended setting: True
+#
+config_open_build_dir = True
 
 
 ##############################################################################
@@ -86,18 +99,24 @@ import time
 import traceback
 
 
+##############################################################################
+#
 # Globals
+#
+##############################################################################
 
 log = logging.getLogger('UFW')
 
 issued_warnings = False
 
 
-# Maintains the inter-build state of a project.
+##############################################################################
 #
-# One copy of the build state file is kept in the "Objects" dir for each
-# platform. This ensures that cleaning any of the platforms will invalidate
-# the build state.
+# Classes
+#
+##############################################################################
+
+# Allows the slave build to communicate with the master build.
 #
 class BuildState:
 
@@ -122,7 +141,7 @@ class BuildState:
         self.slave_built_embedded_fw_path = built_embedded_fw_path
 
     def get_save_path(self):
-        return "%s/ufw_build_state.json" % os.environ['PROJECT_TEMP_DIR']
+        return os.path.join(os.environ['PROJECT_TEMP_DIR'], "ufw_build_state.json")
 
     def persist(self):
         filename = self.get_save_path()
@@ -162,14 +181,14 @@ class Project:
         self.static_libraries = self.get_build_phase_files('PBXFrameworksBuildPhase', lambda x: x['fileRef']['fileType'] == 'archive.ar' and x['fileRef']['sourceTree'] not in ['DEVELOPER_DIR', 'SDKROOT'])
         self.static_frameworks = self.get_build_phase_files('PBXFrameworksBuildPhase', lambda x: x['fileRef']['fileType'] == 'wrapper.framework' and x['fileRef']['sourceTree'] not in ['DEVELOPER_DIR', 'SDKROOT'])
         self.compilable_sources = self.get_build_phase_files('PBXSourcesBuildPhase', lambda x: x['fileRef']['fileType'] in sourcecode_types)
-        self.header_paths = [x['fullPath'] for x in self.public_headers]
+        self.header_paths = [os.path.join(*x['pathComponents']) for x in self.public_headers]
 
-        self.headers_dir = "%s/%s/Headers" % (os.environ['TARGET_BUILD_DIR'], os.environ['CONTENTS_FOLDER_PATH'])
-        self.libtool_path = "%s/usr/bin/libtool" % os.environ['DT_TOOLCHAIN_DIR']
-        self.project_filename = "%s/%s" % (os.environ['PROJECT_FILE_PATH'], "project.pbxproj")
-        self.local_exe_path = os.environ['TARGET_BUILD_DIR'] + "/" + os.environ['EXECUTABLE_PATH']
+        self.headers_dir = os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['CONTENTS_FOLDER_PATH'], 'Headers')
+        self.libtool_path = os.path.join(os.environ['DT_TOOLCHAIN_DIR'], 'usr', 'bin', 'libtool')
+        self.project_filename = os.path.join(os.environ['PROJECT_FILE_PATH'], "project.pbxproj")
+        self.local_exe_path = os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['EXECUTABLE_PATH'])
         self.local_architectures = os.environ['ARCHS'].split(' ')
-        self.local_built_fw_path = os.environ['TARGET_BUILD_DIR'] + "/" + os.environ['WRAPPER_NAME']
+        self.local_built_fw_path = os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['WRAPPER_NAME'])
         self.local_built_embedded_fw_path = os.path.splitext(self.local_built_fw_path)[0] + ".embeddedframework"
         self.local_linked_archive_paths = [self.get_linked_ufw_archive_path(arch) for arch in self.local_architectures]
         self.local_platform = os.environ['PLATFORM_NAME']
@@ -182,60 +201,86 @@ class Project:
             raise Exception("%s didn't start with %s" % (sdk_name, self.local_platform))
         self.sdk_version = sdk_name[len(self.local_platform):]
 
-    # Load an Xcode project file
+    # Load an Xcode project file.
+    #
     def load_from_file(self, filename):
         project_file = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", filename]))
-        for obj in project_file['objects'].values():
+        all_objects = project_file['objects']
+        del project_file['objects']
+        for obj in all_objects.values():
             self.fix_keys(obj)
-        self.unflatten_object(project_file['objects'], project_file)
+        deref_list = self.build_dereference_list(all_objects, [], None, None, project_file)
+        self.unpack_objects(deref_list)
         project_data = project_file['rootObject']
-        self.build_full_paths(project_data['mainGroup'], [], [])
+        self.build_full_paths(project_data, splitpath(os.environ['SOURCE_ROOT']))
         return project_data
 
-    # Store the full path to a node inside the node as "fullPath", and another
-    # raw copy as "fullPathRaw". Also recurse into that node if it's a group.
-    # The raw copy may contain directory structure fragments (e.g. "some/path")
+    def is_key(self, obj):        
+        return isinstance(obj, basestring) and len(obj) == 24 and re.search('^[0-9a-fA-F]+$', obj) is not None
+    
+    def build_dereference_list(self, all_objects, seen_objects, parent, key, obj):
+        deref_list = []
+        if self.is_key(obj):
+            dereferenced = all_objects.get(obj, obj)
+            if dereferenced is not obj:
+                deref_list.append((parent, key, obj, dereferenced))
+                deref_list += self.build_dereference_list(all_objects, seen_objects, parent, key, dereferenced)
+        elif obj not in seen_objects:
+            seen_objects.append(obj)
+            if isinstance(obj, collections.Mapping):
+                for k, v in obj.iteritems():
+                    deref_list += self.build_dereference_list(all_objects, seen_objects, obj, k, v)
+            elif isinstance(obj, collections.Iterable) and not isinstance(obj, basestring):
+                for item in obj:
+                    deref_list += self.build_dereference_list(all_objects, seen_objects, obj, None, item)
+        return deref_list
+    
+    def unpack_objects(self, deref_list):
+        for parent, key, orig, obj in deref_list:
+            if key is None:
+                parent.remove(orig)
+                parent.append(obj)
+            else:
+                parent[key] = obj
+
+    # Store the full path, separated into components, to a node inside the node
+    # as "pathComponents". Also recurse into that node if it's a group.
     #
-    def build_full_paths(self, node, base_path, base_path_split):
+    def build_full_paths(self, node, base_path):
+        # Some nodes are relative to a different source tree, specified as an
+        # env variable.
+        if node.get('sourceTree', '<group>') != '<group>':
+            new_base_path = os.environ.get(node['sourceTree'], None)
+            if new_base_path:
+                base_path = splitpath(new_base_path)
+        # Add the current node's path, if any.
         if node.get('path', False):
-            base_path = base_path + [node['path']]
-            base_path_split = base_path_split + node['path'].split('/')
-        node['fullPathRaw'] = base_path
-        node['fullPath'] = base_path_split
+            base_path = base_path + splitpath(node['path'])
+        node['pathComponents'] = base_path
+        # Recurse if this is a group.
         if node['isa'] == 'PBXGroup':
             for child in node['children']:
-                self.build_full_paths(child, base_path, base_path_split)
+                self.build_full_paths(child, base_path)
+        elif node['isa'] == 'PBXProject':
+            self.build_full_paths(node['mainGroup'], base_path)
+            self.build_full_paths(node['productRefGroup'], base_path)
+            for child in node['targets']:
+                self.build_full_paths(child, base_path)
+            projectRefs = node.get('projectReferences', None)
+            if projectRefs is not None:
+                for child in projectRefs[0].values():
+                    self.build_full_paths(child, base_path)
 
-    # Get an object by its flat reference, or just return the "key" if it
-    # isn't actually a key (24 char hexadecimal).
-    def dereference(self, all_objects, key):
-        if isinstance(key, basestring) and len(key) == 24 and re.search('^[0-9a-fA-F]+$', key):
-            return all_objects[key]
-        return key
-
-    # Convert the Xcode flat key-value object layout to a deep layout
-    def unflatten_object(self, all_objects, current_obj):
-        if isinstance(current_obj, collections.Mapping):
-            for key, value in current_obj.items():
-                new_value = self.dereference(all_objects, value)
-                if current_obj[key] != new_value or not isinstance(new_value, collections.Mapping):
-                    current_obj[key] = new_value
-                    self.unflatten_object(all_objects, new_value)
-        elif isinstance(current_obj, collections.Iterable) and not isinstance(current_obj, basestring):
-            for idx, value in enumerate(current_obj):
-                new_value = self.dereference(all_objects, value)
-                if current_obj[idx] != new_value:
-                    current_obj[idx] = self.dereference(all_objects, value)
-                    self.unflatten_object(all_objects, current_obj[idx])
-
-    # Fix up any inconvenient keys
+    # Fix up any inconvenient keys.
+    #
     def fix_keys(self, obj):
         key_remappings = {'lastKnownFileType': 'fileType', 'explicitFileType': 'fileType'}
         for key in list(set(key_remappings.keys()) & set(obj.keys())):
             obj[key_remappings[key]] = obj[key]
             del obj[key]
 
-    # Get the files from a build phase
+    # Get the files from a build phase.
+    #
     def get_build_phase_files(self, build_phase_name, filter_func):
         build_phase = filter(lambda x: x['isa'] == build_phase_name, self.target['buildPhases'])[0]
         build_files = filter(filter_func, build_phase['files'])
@@ -254,26 +299,39 @@ class Project:
 
     # Get the full path to where a linkable archive (library or framework)
     # is supposed to be.
+    #
     def get_linked_archive_path(self, architecture):
-        return "%s/%s/%s" % (os.environ['OBJECT_FILE_DIR_%s' % os.environ['CURRENT_VARIANT']],
-                             architecture,
-                             os.environ['EXECUTABLE_NAME'])
+        return os.path.join(os.environ['OBJECT_FILE_DIR_%s' % os.environ['CURRENT_VARIANT']],
+                            architecture,
+                            os.environ['EXECUTABLE_NAME'])
 
-    # Get the full path to our custom linked archive of the project
+    # Get the full path to our custom linked archive of the project.
+    #
     def get_linked_ufw_archive_path(self, architecture):
         return self.get_linked_archive_path(architecture) + ".ufwbuild"
 
-    # Get the full path to the executable of an archive
+    # Get the full path to the executable of an archive.
+    #
     def get_exe_path(self, node):
-        path = os.environ['SOURCE_ROOT'] + "/" + "/".join(node['fullPath'])
+        path = os.path.join(*node['pathComponents'])
         if node['fileType'] == 'wrapper.framework':
             # Frameworks are directories, so go one deeper
-            path += "/" + os.path.splitext(node['fullPath'][-1])[0]
+            path = os.path.join(path, os.path.splitext(node['pathComponents'][-1])[0])
         return path
 
-    # Command to link all objects of a single architecture
-    def get_link_single_arch_command(self, architecture):
-        cmd = ["%s/usr/bin/libtool" % os.environ['DT_TOOLCHAIN_DIR'],
+    # Get the path to the directory containing the archive.
+    #
+    def get_containing_path(self, node):
+        return os.path.join(*node['pathComponents'])
+    
+    def get_archive_search_paths(self):
+        log.info("Search paths = %s" % set([self.get_containing_path(fw) for fw in self.static_frameworks] + [self.get_containing_path(fw) for fw in self.static_libraries]))
+        return set([self.get_containing_path(fw) for fw in self.static_frameworks] + [self.get_containing_path(fw) for fw in self.static_libraries])
+
+    # Command to link all objects of a single architecture.
+    #
+    def get_single_arch_link_command(self, architecture):
+        cmd = [self.libtool_path,
                "-static",
                "-arch_only", architecture,
                "-syslibroot", os.environ['SDKROOT'],
@@ -283,27 +341,33 @@ class Project:
             cmd += [os.environ['OTHER_LDFLAGS']]
         if os.environ.get('WARNING_LDFLAGS', False):
             cmd += [os.environ['WARNING_LDFLAGS']]
+#        cmd += ["-L%s" % libpath for libpath in self.get_archive_search_paths()]
+        cmd += [self.get_exe_path(fw) for fw in self.static_frameworks]
+        cmd += [self.get_exe_path(lib) for lib in self.static_libraries]
         cmd += ["-o", self.get_linked_ufw_archive_path(architecture)]
         return cmd
 
-    # Command to link all archives into a universal archive (all archs)
-    def get_final_link_command(self):
-        cmd = ["%s/usr/bin/libtool" % os.environ['DT_TOOLCHAIN_DIR'],
-               "-static"]
-        cmd += self.local_linked_archive_paths + self.build_state.slave_linked_archive_paths
-        cmd += [self.get_exe_path(fw) for fw in self.static_frameworks]
-        cmd += [self.get_exe_path(lib) for lib in self.static_libraries]
-        cmd += ["-o", "%s/%s" % (os.environ['TARGET_BUILD_DIR'], os.environ['EXECUTABLE_PATH'])]
-        return cmd
-
-    # Command to link all archives into a universal archive (local archs only)
-    def get_local_final_link_command(self):
-        cmd = ["%s/usr/bin/libtool" % os.environ['DT_TOOLCHAIN_DIR'],
+    # Command to link all local architectures for the current configuration
+    # into an archive. This reads all libraries + the UFW-built archives and
+    # overwrites the final product.
+    #
+    def get_local_archs_link_command(self):
+        cmd = [self.libtool_path,
                "-static"]
         cmd += self.local_linked_archive_paths
         cmd += [self.get_exe_path(fw) for fw in self.static_frameworks]
         cmd += [self.get_exe_path(lib) for lib in self.static_libraries]
-        cmd += ["-o", "%s/%s" % (os.environ['TARGET_BUILD_DIR'], os.environ['EXECUTABLE_PATH'])]
+        cmd += ["-o", os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['EXECUTABLE_PATH'])]
+        return cmd
+
+    # Command to link all architectures into a universal archive.
+    # This reads all UFW-built archives and overwrites the final product.
+    #
+    def get_all_archs_link_command(self):
+        cmd = [self.libtool_path,
+               "-static"]
+        cmd += self.local_linked_archive_paths + self.build_state.slave_linked_archive_paths
+        cmd += ["-o", os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['EXECUTABLE_PATH'])]
         return cmd
 
     # Build up an environment for the slave process. This uses BUILD_ROOT
@@ -312,7 +376,10 @@ class Project:
     # in the project directory under "build".
     #
     def get_slave_environment(self):
-        ignored = ['LD_MAP_FILE_PATH']
+        ignored = ['LD_MAP_FILE_PATH',
+        'HEADER_SEARCH_PATHS',
+        'LIBRARY_SEARCH_PATHS',
+        'FRAMEWORK_SEARCH_PATHS']
         build_root = os.environ['BUILD_ROOT']
         temp_root = os.environ['TEMP_ROOT']
         newenv = {}
@@ -323,6 +390,7 @@ class Project:
         return newenv
 
     # Command to invoke xcodebuild on the slave platform.
+    #
     def get_slave_project_build_command(self):
         cmd = ["xcodebuild",
                "-project",
@@ -339,29 +407,44 @@ class Project:
         return cmd
 
 
-# Utility Functions
 
-def is_master():
-    return os.environ.get('UFW_MASTER_PLATFORM', os.environ['PLATFORM_NAME']) == os.environ['PLATFORM_NAME']
+##############################################################################
+#
+# Utility Functions
+#
+##############################################################################
+
+# Split a path into a list of path components.
+#
+def splitpath(path, maxdepth=20):
+     (head, tail) = os.path.split(path)
+     return splitpath(head, maxdepth - 1) + [tail] if maxdepth and head and head != path else [ head or tail ]
 
 # Remove all subdirectories under a path.
+#
 def remove_subdirs(path, ignore_files):
     if os.path.exists(path):
         for filename in filter(lambda x: x not in ignore_files, os.listdir(path)):
-            fullpath = path + "/" + filename
+            fullpath = os.path.join(path, filename)
             if os.path.isdir(fullpath):
                 log.info("Remove %s" % fullpath)
                 shutil.rmtree(fullpath)
 
+# Make whatever parent paths are necessary for a path to exist.
+#
+def ensure_path_exists(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
+# Make whatever parent paths are necessary for a path's parent to exist.
+#
 def ensure_parent_exists(path):
     parent = os.path.dirname(path)
     if not os.path.isdir(parent):
         os.makedirs(parent)
 
-def ensure_path_exists(path):
-    if not os.path.isdir(path):
-        os.makedirs(path)
-
+# Remove a file or dir if it exists.
+#
 def remove_path(path):
     if os.path.exists(path):
         if os.path.isdir(path):
@@ -369,6 +452,8 @@ def remove_path(path):
         else:
             os.remove(path)
 
+# Move a file or dir, replacing the destination if it exists.
+#
 def move_file(src, dst):
     if src == dst or not os.path.isfile(src):
         return
@@ -377,15 +462,21 @@ def move_file(src, dst):
     remove_path(dst)
     shutil.move(src, dst)
 
+# Copy a file or dir, replacing the destination if it exists already.
+#
 def copy_overwrite(src, dst):
     if src != dst:
         remove_path(dst)
         ensure_parent_exists(dst)
         shutil.copytree(src, dst, symlinks=True)
 
+# Attempt to symlink link_path to link_to.
+# link_to must be a path relative to link_path's parent and must exist.
+# If link_path already exists, do nothing.
+#
 def attempt_symlink(link_path, link_to):
     # Only allow linking to an existing file
-    os.stat(os.path.abspath(link_path + "/../" + link_to))
+    os.stat(os.path.abspath(os.path.join(link_path, "..", link_to)))
 
     # Only make the link if it hasn't already been made
     if not os.path.exists(link_path):
@@ -396,13 +487,13 @@ def attempt_symlink(link_path, link_to):
 # relative to base_path.
 #
 def top_level_file_path(base_path, path_list):
-    return base_path + "/" + os.path.split(path_list[-1])[-1]
+    return os.path.join(base_path, os.path.split(path_list[-1])[-1])
 
 # Takes all entries in an array-based path and returns a normal path
 # relative to base_path.
 #
 def full_file_path(base_path, path_list):
-    return base_path + "/" + "/".join(path_list)
+    return os.path.join(*([base_path] + path_list))
 
 # Print a command before executing it.
 # Also print out all output from the command to STDOUT.
@@ -431,47 +522,92 @@ def print_and_call_slave_build(cmd, other_platform):
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, cmd)
 
+# Issue a warning and record that a warning has been issued.
+#
 def issue_warning(msg, *args, **kwargs):
     global issued_warnings
     issued_warnings = True
     log.warn(msg, *args, **kwargs)
 
 
+
+##############################################################################
+#
 # Main Application
+#
+##############################################################################
+
+# Check if we are running as master.
+#
+def is_master():
+    return os.environ.get('UFW_MASTER_PLATFORM', os.environ['PLATFORM_NAME']) == os.environ['PLATFORM_NAME']
 
 # DerivedData should almost never appear in any framework, library, or header
 # search paths. However, Xcode will sometimes add them in, so we check to make
 # sure.
 #
-def check_for_derived_data_in_search_paths():
+def check_for_derived_data_in_search_paths(project):
     search_path_keys = ["FRAMEWORK_SEARCH_PATHS", "LIBRARY_SEARCH_PATHS", "HEADER_SEARCH_PATHS"]
-    for path_key in search_path_keys:
-        path = os.environ[path_key]
+    build_configs = project.target['buildConfigurationList']['buildConfigurations']
+    build_settings = filter(lambda x: x['name'] == os.environ['CONFIGURATION'], build_configs)[0]['buildSettings']
+    
+    found_something = False
+    for path_key in filter(lambda x: x in build_settings, search_path_keys):
+        path = build_settings[path_key]
+        log.error("Checking %s: %s", path_key, path)
         if "DerivedData" in path and "/../" in path:
+            found_something = True
+            log.warn("Derived data in %s" % path)
             issue_warning("'%s' contains reference to 'DerivedData'." % path_key)
+    if found_something:
+        log.warn("Check your build settings and remove any entries that contain paths inside the DerivedData folder.")
+        log.warn("Otherwise you can disable this warning by changing 'config_warn_derived_data' in this script.")
 
 # Link local architectures into their respective archives.
+#
 def link_local_archs(project):
     for arch in project.local_architectures:
-        print_and_call(project.get_link_single_arch_command(arch))
+        print_and_call(project.get_single_arch_link_command(arch))
+
+# Link only the local architectures into the final product, not the slave
+# architectures. For iphoneos, this will be armv6, armv7. For simulator, this
+# will be i386.
+#
+def link_combine_local_archs(project):
+    print_and_call(project.get_local_archs_link_command())
 
 # Link all architectures into the final product.
-def link_final_target(project):
-    print_and_call(project.get_final_link_command())
-
-# Link only the local architectures into the final product, not the slave architecture.
-# For iphoneos, this will be armv6, armv7. For simulator, this will be i386.
 #
-def link_local_final_target(project):
-    print_and_call(project.get_local_final_link_command())
+def link_combine_all_archs(project):
+    print_and_call(project.get_all_archs_link_command())
+
+# Check if we should open the build directory after a successful build.
+#
+def should_open_build_dir():
+    env_setting = os.environ.get('UFW_OPEN_BUILD_DIR', None)
+    if env_setting is not None:
+        return env_setting
+
+    return config_open_build_dir
 
 # Open the build dir in Finder.
+#
 def open_build_dir():
     print_and_call(['open', os.environ['TARGET_BUILD_DIR']])
 
-# Check if the build was started by selecting "Archive" under "Product" in Xcode.
+# Check if the build was started by selecting "Archive" under "Product" in
+# Xcode.
+#
 def is_archive_build():
-    # Unfortunately, we must rely on other heuristics since ACTION is always "build".
+    # ACTION is always 'build', but perhaps Apple will fix this someday?
+    if os.environ['ACTION'] == 'archive':
+        return True
+
+    # This can be passed in as an env variable when building from command line.
+    if os.environ.get('UFW_ACTION', None) == 'archive':
+        return True
+
+    # This partial path is used when you select "archive" from within Xcode.
     return '/ArchiveIntermediates/' in os.environ['BUILD_DIR']
 
 # Xcode by default throws all public headers into the top level directory.
@@ -482,9 +618,9 @@ def build_deep_header_hierarchy(project):
     if not header_path_top:
         header_path_top = os.path.commonprefix(project.header_paths)
     else:
-        header_path_top = header_path_top.split('/')
+        header_path_top = splitpath(header_path_top)
 
-    built_headers_path = os.environ['TARGET_BUILD_DIR'] + "/" + os.environ['PUBLIC_HEADERS_FOLDER_PATH']
+    built_headers_path = os.path.join(os.environ['TARGET_BUILD_DIR'], os.environ['PUBLIC_HEADERS_FOLDER_PATH'])
     movable_headers = project.movable_headers_relative_to(header_path_top)
 
     # Remove subdirs if they only contain files that have been rebuilt
@@ -495,34 +631,81 @@ def build_deep_header_hierarchy(project):
     for header in movable_headers:
         move_file(top_level_file_path(built_headers_path, header), full_file_path(built_headers_path, header))
 
+# Add all symlinks needed to make a full framework structure:
+#
+# MyFramework.framework
+# |-- MyFramework -> Versions/Current/MyFramework
+# |-- Headers -> Versions/Current/Headers
+# |-- Resources -> Versions/Current/Resources
+# `-- Versions
+#     |-- A
+#     |   |-- MyFramework
+#     |   |-- Headers
+#     |   |   `-- MyFramework.h
+#     |   `-- Resources
+#     |       |-- Info.plist
+#     |       |-- MyViewController.nib
+#     |       `-- en.lproj
+#     |           `-- InfoPlist.strings
+#     `-- Current -> A
+#
 def add_symlinks_to_framework(project):
-    base_dir = project.local_built_fw_path + "/"
-    attempt_symlink(base_dir + "Versions/Current", os.environ['FRAMEWORK_VERSION'])
-    if os.path.isdir(base_dir + "Versions/Current/Headers"):
-        attempt_symlink(base_dir + "Headers", "Versions/Current/Headers")
-    if os.path.isdir(base_dir + "Versions/Current/Resources"):
-        attempt_symlink(base_dir + "Resources", "Versions/Current/Resources")
-    attempt_symlink(base_dir + os.environ['EXECUTABLE_NAME'], "Versions/Current/" + os.environ['EXECUTABLE_NAME'])
+    base_dir = project.local_built_fw_path
+    attempt_symlink(os.path.join(base_dir, "Versions", "Current"), os.environ['FRAMEWORK_VERSION'])
+    if os.path.isdir(os.path.join(base_dir, "Versions", "Current", "Headers")):
+        attempt_symlink(os.path.join(base_dir, "Headers"), os.path.join("Versions", "Current", "Headers"))
+    if os.path.isdir(os.path.join(base_dir, "Versions", "Current", "Resources")):
+        attempt_symlink(os.path.join(base_dir, "Resources"), os.path.join("Versions", "Current", "Resources"))
+    attempt_symlink(os.path.join(base_dir, os.environ['EXECUTABLE_NAME']), os.path.join("Versions", "Current", os.environ['EXECUTABLE_NAME']))
 
-def run_slave_build(project):
-    print_and_call_slave_build(project.get_slave_project_build_command(), project.other_platform)
-
+# Build an embedded framework structure.
+# An embedded framework contains the actual framework, plus a "Resources"
+# directory containing symlinks to all resources found in the actual framework,
+# with the exception of "Info.plist" and anything ending in ".lproj":
+#
+# MyFramework.embeddedframework
+# |-- MyFramework.framework
+# |   |-- MyFramework -> Versions/Current/MyFramework
+# |   |-- Headers -> Versions/Current/Headers
+# |   |-- Resources -> Versions/Current/Resources
+# |   `-- Versions
+# |       |-- A
+# |       |   |-- MyFramework
+# |       |   |-- Headers
+# |       |   |   `-- MyFramework.h
+# |       |   `-- Resources
+# |       |       |-- Info.plist
+# |       |       |-- MyViewController.nib
+# |       |       `-- en.lproj
+# |       |           `-- InfoPlist.strings
+# |       `-- Current -> A
+# `-- Resources
+#     `-- MyViewController.nib -> ../MyFramework.framework/Resources/MyViewController.nib
+#
 def build_embedded_framework(project):
     fw_path = project.local_built_fw_path
     embedded_path = project.local_built_embedded_fw_path
     fw_name = os.environ['WRAPPER_NAME']
     remove_path(embedded_path)
     ensure_path_exists(embedded_path)
-    copy_overwrite(fw_path, embedded_path + "/" + fw_name)
-    ensure_path_exists(embedded_path + "/Resources")
-    symlink_source = "../" + fw_name + "/Resources/"
-    symlink_path = embedded_path + "/Resources/"
-    if os.path.isdir(fw_path + "/Resources"):
-        for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(fw_path + "/Resources")):
-            attempt_symlink(symlink_path + file, symlink_source + file)
+    copy_overwrite(fw_path, os.path.join(embedded_path, fw_name))
+    ensure_path_exists(os.path.join(embedded_path, "Resources"))
+    symlink_source = os.path.join("..", fw_name, "Resources")
+    symlink_path = os.path.join(embedded_path, "Resources")
+    if os.path.isdir(os.path.join(fw_path, "Resources")):
+        for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(os.path.join(fw_path, "Resources"))):
+            attempt_symlink(os.path.join(symlink_path, file), os.path.join(symlink_source, file))
 
+# Run the build process in slave mode to build the other configuration
+# (device/simulator).
+#
+def run_slave_build(project):
+    print_and_call_slave_build(project.get_slave_project_build_command(), project.other_platform)
+
+# Run the build process.
+#
 def run_build():
-    project = Project("%s/%s" % (os.environ['PROJECT_FILE_PATH'], "project.pbxproj"))
+    project = Project(os.path.join(os.environ['PROJECT_FILE_PATH'], "project.pbxproj"))
 
     # Issue warnings only if we're master.
     if is_master():
@@ -530,7 +713,7 @@ def run_build():
             raise Exception("No compilable sources found. Please add at least one source file to build target %s." % os.environ['TARGET_NAME'])
 
         if config_warn_derived_data:
-            check_for_derived_data_in_search_paths()
+            check_for_derived_data_in_search_paths(project)
         if config_warn_no_public_headers and len(project.public_headers) == 0:
             issue_warning('No headers in build target %s were marked public. Please move at least one header to "Public" in the "Copy Headers" build phase.' % os.environ['TARGET_NAME'])
 
@@ -538,7 +721,8 @@ def run_build():
     if is_archive_build():
         if is_master():
             log.debug("Building as MASTER")
-            # The slave-side linker tries to include this (nonexistent) path as a library path.
+            # The slave-side linker tries to include this (nonexistent) path as
+            # a library path.
             ensure_path_exists(project.get_slave_environment()['BUILT_PRODUCTS_DIR'])
             project.build_state.persist()
             run_slave_build(project)
@@ -554,10 +738,11 @@ def run_build():
 
     link_local_archs(project)
     
-    if is_archive_build():
-        link_final_target(project)
+    # Only do a universal binary when building an archive.
+    if is_archive_build() and is_master():
+        link_combine_all_archs(project)
     else:
-        link_local_final_target(project)
+        link_combine_local_archs(project)
 
     if config_deep_header_hierarchy:
         build_deep_header_hierarchy(project)
@@ -589,11 +774,16 @@ if __name__ == "__main__":
             log.warn("Build completed with warnings")
         else:
             log.info("Build completed")
+        if not is_archive_build():
+            log.info("Note: This is *NOT* a universal framework build. To build as a universal framework, do an archive build.")
+            log.info("To do an archive build from command line, use \"xcodebuild -configuration Release UFW_ACTION=archive clean build\"")
     except Exception:
         traceback.print_exc(file=sys.stdout)
         error_code = 1
         log.error("Build failed")
     finally:
-        if error_code == 0 and is_archive_build():
-            open_build_dir()
+        if error_code == 0 and is_archive_build() and is_master():
+            log.info("Built framework is in " + os.environ['TARGET_BUILD_DIR'])
+            if should_open_build_dir():
+                open_build_dir()
         sys.exit(error_code)
