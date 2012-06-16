@@ -8,11 +8,30 @@ import logging
 #
 ##############################################################################
 
-# Minimum log level
+# Select which kind of framework to build.
 #
-# Recommended setting: logging.INFO
+# Note: Due to issues with Xcode's build process, if you select
+#       'embeddedframework', it will still show the regular framework
+#       (as a symlink) along side of the embedded framework. Be sure to
+#       instruct your users to copy/move the embedded framework in this case!
 #
-config_log_level = logging.INFO
+# If your framework contains resources such as images, nibs, momds, plists,
+# zipfiles and such, choose 'embeddedframework'.
+#
+# If your framework contains no resources, choose 'framework'.
+#
+config_framework_type = 'framework'
+#config_framework_type = 'embeddedframework'
+
+# Open the build directory in Finder when the universal framework is
+# successfully built.
+#
+# This value can be overridden by setting the UFW_OPEN_BUILD_DIR env variable
+# to True or False.
+#
+# Recommended setting: True
+#
+config_open_build_dir = True
 
 # If true, ensures that all public headers are stored in the framework under
 # the same directory hierarchy as they were in the source tree.
@@ -69,15 +88,11 @@ config_warn_no_public_headers = True
 #
 config_fail_on_warnings = True
 
-# Open the build directory in Finder when the universal framework is
-# successfully built.
+# Minimum log level
 #
-# This value can be overridden by setting the UFW_OPEN_BUILD_DIR env variable
-# to True or False.
+# Recommended setting: logging.INFO
 #
-# Recommended setting: True
-#
-config_open_build_dir = True
+config_log_level = logging.INFO
 
 
 ##############################################################################
@@ -470,7 +485,7 @@ def copy_overwrite(src, dst):
         ensure_parent_exists(dst)
         shutil.copytree(src, dst, symlinks=True)
 
-# Attempt to symlink link_path to link_to.
+# Attempt to symlink link_path -> link_to.
 # link_to must be a path relative to link_path's parent and must exist.
 # If link_path already exists, do nothing.
 #
@@ -554,8 +569,7 @@ def check_for_derived_data_in_search_paths(project):
     found_something = False
     for path_key in filter(lambda x: x in build_settings, search_path_keys):
         path = build_settings[path_key]
-        log.error("Checking %s: %s", path_key, path)
-        if "DerivedData" in path and "/../" in path:
+        if "DerivedData" in path:
             found_something = True
             log.warn("Derived data in %s" % path)
             issue_warning("'%s' contains reference to 'DerivedData'." % path_key)
@@ -704,6 +718,14 @@ def build_embedded_framework(project):
         for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(os.path.join(fw_path, "Resources"))):
             attempt_symlink(os.path.join(symlink_path, file), os.path.join(symlink_source, file))
 
+    # Remove the normal framework and replace it with a symlink to the copy
+    # in the embedded framework. This is needed because Xcode runs its strip
+    # phase AFTER the script runs.
+    embed_fw_wrapper = os.path.splitext(os.environ['WRAPPER_NAME'])[0] + ".embeddedframework"
+    remove_path(fw_path)
+    attempt_symlink(fw_path, os.path.join(embed_fw_wrapper, os.environ['WRAPPER_NAME']))
+
+
 # Run the build process in slave mode to build the other configuration
 # (device/simulator).
 #
@@ -756,7 +778,12 @@ def run_build():
         build_deep_header_hierarchy(project)
 
     add_symlinks_to_framework(project)
-    build_embedded_framework(project)
+    
+    if is_master():
+        if config_framework_type == 'embeddedframework':
+            build_embedded_framework(project)
+        elif config_framework_type != 'framework':
+            raise Exception("%s: Unknown framework type for config_framework_type" % config_framework_type)
 
 
 if __name__ == "__main__":
