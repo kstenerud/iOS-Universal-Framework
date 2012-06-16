@@ -600,15 +600,23 @@ def open_build_dir():
 #
 def is_archive_build():
     # ACTION is always 'build', but perhaps Apple will fix this someday?
-    if os.environ['ACTION'] == 'archive':
-        return True
+    archive_build = os.environ['ACTION'] == 'archive'
 
-    # This can be passed in as an env variable when building from command line.
-    if os.environ.get('UFW_ACTION', None) == 'archive':
-        return True
+    if not archive_build:
+        # This can be passed in as an env variable when building from command line.
+        archive_build = os.environ.get('UFW_ACTION', None) == 'archive'
 
-    # This partial path is used when you select "archive" from within Xcode.
-    return '/ArchiveIntermediates/' in os.environ['BUILD_DIR']
+    build_dir = splitpath(os.environ['BUILD_DIR'])
+    if not archive_build:
+        # This partial path is used when you select "archive" from within Xcode.
+        archive_build = 'ArchiveIntermediates' in build_dir
+
+    # It only counts as a full archive build if this target is being built into
+    # its own build dir (not being built as a dependency of another target)
+    if archive_build:
+        archive_build = os.environ['TARGET_NAME'] in build_dir
+    
+    return archive_build
 
 # Xcode by default throws all public headers into the top level directory.
 # This function moves them to their expected deep hierarchy.
