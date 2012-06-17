@@ -12,6 +12,77 @@ By Karl Stenerud
 Beta Notes
 ----------
 
+### 2012-06-16:
+
+#### Updating your project to use the new scripts
+
+You can now update existing projects to use the newest build scripts.
+Running the **update_project.py** script will replace your project's universal
+framework build script with the script in devel/src/BuildFW.py.
+
+**Before upgrading, please back up your project file!**
+
+##### Steps to Upgrade (Mk 7 or earlier):
+
+If your project was built using Mk 7 or earlier, delete the first two universal
+framework build scripts. The first will be right after "Target Dependencies"
+and starts with the following (or something close):
+
+    set -e
+    
+    set +u
+    if [[ $UFW_MASTER_SCRIPT_RUNNING ]]
+    then
+        # Nothing for the slave script to do
+        exit 0
+    fi
+    set -u
+
+The second script is after "Copy Bundle Resources" and starts with the
+following (or something close). Note that this script may not exist in very
+early versions of the framework project:
+
+    HEADERS_ROOT=$SRCROOT/$PRODUCT_NAME
+    FRAMEWORK_HEADERS_DIR="$BUILT_PRODUCTS_DIR/$WRAPPER_NAME/Versions/$FRAMEWORK_VERSION/Headers"
+    
+    ## only header files expected at this point
+    PUBLIC_HEADERS=$(find $FRAMEWORK_HEADERS_DIR/. -not -type d 2> /dev/null | sed -e "s@.*/@@g")
+
+The final script (the one you want to keep) will start with something similar
+to the first script you deleted.
+
+Now proceed with the next steps below.
+
+
+##### Steps to Upgrade (All versions)
+
+* Make sure the top of the "Run Script" phase for the universal framework
+  script starts with the following comment: "# TAG: BUILD SCRIPT". If it
+  doesn't, add it in!
+
+* Close your project
+
+* Run the project update script from shell:
+    $ ./update_project.py ~/Projects/MyProj/MyProj.xcodeproj/project.pbxproj
+
+* Reopen your project
+
+The project update script will create a backup (project.pbxproj.orig) of the
+old project file. To disable this behavior, use the "-n" switch.
+
+
+### Selecting Framework Type
+
+The script now requires you to select which kind of framework (normal or
+embedded) you will be creating, using the **config_framework_type**
+configuration variable. Only the selected framework type will be created and
+shown to the user.
+
+**Note:** Xcode requires the normal framework dir to exist, so when building an
+embedded framework, the script simply creates a symlink to the copy inside the
+embeddedframework. Be sure to tell your users not to to copy the regular
+"framework" symlink by mistake!
+
 
 ### 2012-06-12:
 
@@ -118,9 +189,7 @@ a way to trick Xcode into seeing the included resources. As far as Xcode is
 concerned, they are simply folders, and so there are a few minor issues with
 embedded frameworks:
 
-* They don't show up in the **Products** group. You need to right-click on the
-regular framework product, select "Show in Finder", and the embedded framework
-will be right next to the regular framework.
+* They don't show up in the **Products** group.
 
 * When you delete an embedded framework from a project, Xcode will not delete
 the outer folder (XX.embeddedframework), so if you try to re-add later, it
@@ -128,7 +197,9 @@ will complain. You need to manually delete the XX.embeddedframework folder
 manually using Finder.
 
 * Things get a little tricky when you have a framework project as a dependency
-if your framework has resources that the parent project needs.
+  if your framework has resources that the parent project needs. You may need
+  to manually add the resources to the parent or sibling project.
+
 
 
 
@@ -186,17 +257,20 @@ dependencies, so there's no problem.
 If, however, you use project dependencies (such as in workspaces), Xcode won't
 be happy. The fake framework won't show up in the list when you click the '+'
 button under "Link Binary With Libraries" in your main application project.
-You can manually drag it from "Products" under your fake framework project,
-but then when you build your main project, you'll get a warning like this:
+You can manually drag it from "Products" under your fake framework project to
+add the dependency.
+
+**Note:** In older versions of Xcode, you'd get warnings like the following:
 
     warning: skipping file '/somewhere/MyFramework.framework'
     (unexpected file type 'wrapper.cfbundle' in Frameworks & Libraries build phase)
 
-This will be followed by linker errors for anything in your fake framework.
+This would be followed by linker errors for anything in your fake framework.
+As of Xcode 4.3.1, this doesn't seem to happen anymore.
 
-Fortunately, there is a workaround. You can manually tell the linker to link
-in the framework by adding a "-framework" switch with your framework's name in
-"Other Linker Flags" in the project that uses the framework:
+If you do encounter this issue, you can work around it by adding a "-framework"
+switch with your framework's name in "Other Linker Flags" in the project that
+uses the framework:
 
     -framework MyFramework
 
