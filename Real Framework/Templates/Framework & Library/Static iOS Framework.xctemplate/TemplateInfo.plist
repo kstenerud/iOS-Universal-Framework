@@ -290,8 +290,8 @@ class Project:
         del project_file['objects']
         for obj in all_objects.values():
             self.fix_keys(obj)
-        deref_list = self.build_dereference_list(all_objects, [], None, None, project_file)
-        self.unpack_objects(deref_list)
+        self.unpack_objects(self.build_dereference_list(all_objects, None, None, project_file))
+        self.unpack_objects(self.build_dereference_list(all_objects, None, None, all_objects.values()))
         project_data = project_file['rootObject']
         self.build_full_paths(project_data, splitpath(os.environ['SOURCE_ROOT']))
         return project_data
@@ -299,21 +299,18 @@ class Project:
     def is_key(self, obj):        
         return isinstance(obj, basestring) and len(obj) == 24 and re.search('^[0-9a-fA-F]+$', obj) is not None
     
-    def build_dereference_list(self, all_objects, seen_objects, parent, key, obj):
+    def build_dereference_list(self, all_objects, parent, key, obj):
         deref_list = []
         if self.is_key(obj):
             dereferenced = all_objects.get(obj, obj)
             if dereferenced is not obj:
                 deref_list.append((parent, key, obj, dereferenced))
-                deref_list += self.build_dereference_list(all_objects, seen_objects, parent, key, dereferenced)
-        elif obj not in seen_objects:
-            seen_objects.append(obj)
-            if isinstance(obj, collections.Mapping):
-                for k, v in obj.iteritems():
-                    deref_list += self.build_dereference_list(all_objects, seen_objects, obj, k, v)
-            elif isinstance(obj, collections.Iterable) and not isinstance(obj, basestring):
-                for item in obj:
-                    deref_list += self.build_dereference_list(all_objects, seen_objects, obj, None, item)
+        elif isinstance(obj, collections.Mapping):
+            for k, v in obj.iteritems():
+                deref_list += self.build_dereference_list(all_objects, obj, k, v)
+        elif isinstance(obj, collections.Iterable) and not isinstance(obj, basestring):
+            for item in obj:
+                deref_list += self.build_dereference_list(all_objects, obj, None, item)
         return deref_list
     
     def unpack_objects(self, deref_list):
