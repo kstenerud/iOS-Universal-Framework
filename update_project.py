@@ -36,24 +36,24 @@ if __name__ == "__main__":
     with open(project_filename, "r") as f:
         project_lines = f.readlines()
 
-    script_index = None
+    script_indices = []
     for index, item in enumerate(project_lines):
         if script_tag in item:
-            script_index = index
-            break
+            script_indices.append(index)
     
-    if script_index is None:
+    if len(script_indices) == 0:
         print "No script containing \"%s\" found in %s" % (script_tag, project_filename)
         sys.exit(1)
+
+    for script_index in script_indices:
+        shellpath_index = script_index - 1
     
-    shellpath_index = script_index - 1
-    
-    if "shellPath = " not in project_lines[shellpath_index]:
-        print "Could not find shellPath for script in %s" % project_filename
-        sys.exit(1)
-    
-    project_lines[shellpath_index] = "                        shellPath = /usr/bin/python;\n"
-    project_lines[script_index] = "                        shellScript = \"" + build_script + "\";\n"
+        if "shellPath = " not in project_lines[shellpath_index]:
+            print "Could not find shellPath for script in %s" % project_filename
+            sys.exit(1)
+        
+        project_lines[shellpath_index] = "                        shellPath = /usr/bin/python;\n"
+        project_lines[script_index] = "                        shellScript = \"" + build_script + "\";\n"
     
     if options.make_backup:
         shutil.move(project_filename, project_filename + ".orig")
