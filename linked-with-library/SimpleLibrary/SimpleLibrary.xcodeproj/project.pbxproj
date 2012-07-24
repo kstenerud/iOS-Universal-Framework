@@ -1,0 +1,233 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		39C221BC15BDF23200DA4F7D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 39C221BB15BDF23200DA4F7D /* Foundation.framework */; };
+		39C221CA15BDF24A00DA4F7D /* SimpleLibraryClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 39C221C815BDF24A00DA4F7D /* SimpleLibraryClass.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		39C221CB15BDF24A00DA4F7D /* SimpleLibraryClass.m in Sources */ = {isa = PBXBuildFile; fileRef = 39C221C915BDF24A00DA4F7D /* SimpleLibraryClass.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		39C221B815BDF23200DA4F7D /* libSimpleLibrary.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libSimpleLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		39C221BB15BDF23200DA4F7D /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		39C221BF15BDF23200DA4F7D /* SimpleLibrary-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SimpleLibrary-Prefix.pch"; sourceTree = "<group>"; };
+		39C221C815BDF24A00DA4F7D /* SimpleLibraryClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.objj.h; path = SimpleLibraryClass.h; sourceTree = "<group>"; };
+		39C221C915BDF24A00DA4F7D /* SimpleLibraryClass.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SimpleLibraryClass.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		39C221B515BDF23200DA4F7D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39C221BC15BDF23200DA4F7D /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		39C221AD15BDF23200DA4F7D = {
+			isa = PBXGroup;
+			children = (
+				39C221BD15BDF23200DA4F7D /* SimpleLibrary */,
+				39C221BA15BDF23200DA4F7D /* Frameworks */,
+				39C221B915BDF23200DA4F7D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		39C221B915BDF23200DA4F7D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				39C221B815BDF23200DA4F7D /* libSimpleLibrary.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		39C221BA15BDF23200DA4F7D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				39C221BB15BDF23200DA4F7D /* Foundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		39C221BD15BDF23200DA4F7D /* SimpleLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				39C221BE15BDF23200DA4F7D /* Supporting Files */,
+				39C221C815BDF24A00DA4F7D /* SimpleLibraryClass.h */,
+				39C221C915BDF24A00DA4F7D /* SimpleLibraryClass.m */,
+			);
+			path = SimpleLibrary;
+			sourceTree = "<group>";
+		};
+		39C221BE15BDF23200DA4F7D /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				39C221BF15BDF23200DA4F7D /* SimpleLibrary-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		39C221B615BDF23200DA4F7D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39C221CA15BDF24A00DA4F7D /* SimpleLibraryClass.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		39C221B715BDF23200DA4F7D /* SimpleLibrary */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 39C221C515BDF23300DA4F7D /* Build configuration list for PBXNativeTarget "SimpleLibrary" */;
+			buildPhases = (
+				39C221B415BDF23200DA4F7D /* Sources */,
+				39C221B515BDF23200DA4F7D /* Frameworks */,
+				39C221B615BDF23200DA4F7D /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SimpleLibrary;
+			productName = SimpleLibrary;
+			productReference = 39C221B815BDF23200DA4F7D /* libSimpleLibrary.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		39C221AF15BDF23200DA4F7D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0430;
+			};
+			buildConfigurationList = 39C221B215BDF23200DA4F7D /* Build configuration list for PBXProject "SimpleLibrary" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 39C221AD15BDF23200DA4F7D;
+			productRefGroup = 39C221B915BDF23200DA4F7D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				39C221B715BDF23200DA4F7D /* SimpleLibrary */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		39C221B415BDF23200DA4F7D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				39C221CB15BDF24A00DA4F7D /* SimpleLibraryClass.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		39C221C315BDF23300DA4F7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		39C221C415BDF23300DA4F7D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 5.1;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		39C221C615BDF23300DA4F7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/SimpleLibrary.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SimpleLibrary/SimpleLibrary-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		39C221C715BDF23300DA4F7D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DSTROOT = /tmp/SimpleLibrary.dst;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "SimpleLibrary/SimpleLibrary-Prefix.pch";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		39C221B215BDF23200DA4F7D /* Build configuration list for PBXProject "SimpleLibrary" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				39C221C315BDF23300DA4F7D /* Debug */,
+				39C221C415BDF23300DA4F7D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		39C221C515BDF23300DA4F7D /* Build configuration list for PBXNativeTarget "SimpleLibrary" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				39C221C615BDF23300DA4F7D /* Debug */,
+				39C221C715BDF23300DA4F7D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 39C221AF15BDF23200DA4F7D /* Project object */;
+}
