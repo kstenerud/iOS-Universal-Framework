@@ -3,6 +3,10 @@ Linking A Static Library Into A Framework
 
 This project demonstrates how a fat static library may be statically linked into a framework. A fat library is a library containing multiple copies of the code, one for each architecture (typically armv6, armv7, and i386, though armv6 may be omitted if you're not interested in supporting older devices such as iPhone 3G or iPod Touch 2).
 
+I've alredady done all of the steps laid out below in this example. You can just hit the build button in TestApp for device or simulator to get the app for that platform.
+
+To build the universal framework, open the LibsIncluded project, set the scheme to **LibsIncluded** and **iOS Device**, and then select **Archive** from the **Product** menu (this is how you build the universal version of a static framework in Mk 8).
+
 **Note:** Statically linking a library to your framework is usually a bad idea because you end up locking the user of your framework into the specific library version you linked against. Also, if you don't expose that library's headers, the user won't be able to use the lower level functions in that library. Worse, they may try to link against their own copy of the library, with linker errors resulting.
 
 Now that you've been warned, let's get down to business.
