@@ -459,6 +459,10 @@ editing your scheme, selecting "Test", and from the "Info" tab changing
 Debugger from **LLDB** to **GDB**.
 
 
+### Changes to framework aren't being shown in apps
+
+If you change the location of the framework on your disk and re-add it to a project, make sure to delete old paths in the target's "Framework Search Paths".  Not doing so can cause the project that uses the framework to be stuck with an old version of the framework, even after cleaning/reinstalling the framework and app.
+
 
 History
 -------
