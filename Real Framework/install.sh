@@ -13,8 +13,6 @@ if [[ $SCRIPT_DIR != /* ]]; then
     fi
 fi
 
-OLD_DEVELOPER_PATH="/Developer"
-NEW_DEVELOPER_PATH="/Applications/Xcode.app/Contents/Developer"
 LOCAL_DEVELOPER_PATH="$HOME/Library/Developer"
 
 TEMPLATES_DIR="Templates/Framework & Library"
@@ -40,13 +38,7 @@ echo " * $SIM_SPECIFICATIONS_PATH/$SPECIFICATIONS_FILE"
 echo
 
 
-# Get the install path
-if [ -d "$NEW_DEVELOPER_PATH" ]
-then
-    DEFAULT_GLOBAL_DEVELOPER_PATH="$NEW_DEVELOPER_PATH"
-else
-    DEFAULT_GLOBAL_DEVELOPER_PATH="$OLD_DEVELOPER_PATH"
-fi
+DEFAULT_GLOBAL_DEVELOPER_PATH="$(xcode-select -print-path)"
 
 GLOBAL_DEVELOPER_PATH=
 while [ "$GLOBAL_DEVELOPER_PATH" == "" ]
