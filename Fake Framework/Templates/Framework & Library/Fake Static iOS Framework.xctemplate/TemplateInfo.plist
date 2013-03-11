@@ -297,8 +297,8 @@ mv "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp" "${BUILT_PRODUCTS_DIR}/${EXEC
 
 echo "Build symlinks"
 
-echo ln -sfh A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
-ln -sfh A "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+echo ln -sfh $FRAMEWORK_VERSION "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
+ln -sfh $FRAMEWORK_VERSION "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Versions/Current"
 echo ln -sfh Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
 ln -sfh Versions/Current/Headers "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Headers"
 echo ln -sfh Versions/Current/Resources "${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}/Resources"
