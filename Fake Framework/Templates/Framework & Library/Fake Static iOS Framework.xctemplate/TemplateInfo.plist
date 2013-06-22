@@ -286,7 +286,7 @@ xcodebuild -project "${PROJECT_FILE_PATH}" -target "${TARGET_NAME}" -configurati
 
 echo "Create universal static library"
 
-if [[ "$XCODE_VERSION_MAJOR = "0500" ]]
+if [[ "$XCODE_VERSION_MAJOR" = "0500" ]]
 then
     echo "$DT_TOOLCHAIN_DIR/usr/bin/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
     "$DT_TOOLCHAIN_DIR/usr/bin/libtool" -static "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" "${UFW_OTHER_BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}" -o "${BUILT_PRODUCTS_DIR}/${EXECUTABLE_PATH}.temp"
