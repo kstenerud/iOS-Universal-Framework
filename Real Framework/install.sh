@@ -109,9 +109,9 @@ cd "$TEMPLATES_SRC_PATH"
 for template in *; do
 	installpath="$TEMPLATES_DST_PATH/$template"
     echo rm -rf "$installpath"
-    rm -rf "$installpath"
+    sudo rm -rf "$installpath"
     echo cp -R "$template" "$installpath"
-    cp -R "$template" "$installpath"
+    sudo cp -R "$template" "$installpath"
 done
 
 # Remove old version of unit test framework
