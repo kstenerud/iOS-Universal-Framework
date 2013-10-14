@@ -157,11 +157,6 @@ So to sum up, when starting a new framework project, always do the following:
 * Uncheck **Show environment variables in build log** in all **Run Script**
   build phases.
 
-#### Archives
-
-Archiving frameworks still doesn't work. Still trying to find a way to fix
-this...
-
 
 Why a Framework?
 ----------------
