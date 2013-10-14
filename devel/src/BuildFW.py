@@ -397,7 +397,7 @@ class Project:
         temp_root = os.environ['TEMP_ROOT']
         newenv = {}
         for key, value in os.environ.items():
-            if key not in ignored and not key.startswith('LINK_FILE_LIST_'):
+            if key not in ignored and not key.startswith('LINK_FILE_LIST_') and not key.startswith('LD_DEPENDENCY_'):
                 if build_root in value or temp_root in value:
                     newenv[key] = value.replace(self.local_platform, self.other_platform)
         return newenv
