@@ -1,83 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>Kind</key>
-	<string>Xcode.Xcode3.ProjectTemplateUnitKind</string>
-	<key>Identifier</key>
-	<string>org.stenerud.fakeIosStaticFramework</string>
-	<key>Concrete</key>
-	<true/>
-	<key>Description</key>
-	<string>This template builds a "fake" static iOS framework.</string>
-	<key>SortOrder</key>
-	<integer>5</integer>
-	<key>Ancestors</key>
-	<array>
-		<string>com.apple.dt.unit.bundleBase</string>
-		<string>com.apple.dt.unit.iPhoneBase</string>
-	</array>
-	<key>Targets</key>
-	<array>
-		<dict>
-			<key>ProductType</key>
-			<string>com.apple.product-type.bundle</string>
-			<key>SharedSettings</key>
-			<dict>
-				<key>ARCHS</key>
-				<string>armv6 $(ARCHS_STANDARD_32_BIT)</string>
-				<key>WRAPPER_EXTENSION</key>
-				<string>framework</string>
-				<key>FRAMEWORK_VERSION</key>
-				<string>A</string>
-				<key>DYLIB_COMPATIBILITY_VERSION</key>
-				<string>1</string>
-				<key>DYLIB_CURRENT_VERSION</key>
-				<string>1</string>
-				<key>SKIP_INSTALL</key>
-				<string>YES</string>
-				<key>MACH_O_TYPE</key>
-				<string>mh_object</string>
-				<key>DEAD_CODE_STRIPPING</key>
-				<string>NO</string>
-				<key>LINK_WITH_STANDARD_LIBRARIES</key>
-				<string>NO</string>
-				<key>INSTALL_PATH</key>
-				<string>$(BUILT_PRODUCTS_DIR)</string>
-				<key>CONTENTS_FOLDER_PATH</key>
-				<string>$(WRAPPER_NAME)/Versions/$(FRAMEWORK_VERSION)</string>
-				<key>UNLOCALIZED_RESOURCES_FOLDER_PATH</key>
-				<string>$(CONTENTS_FOLDER_PATH)/Resources</string>
-				<key>INFOPLIST_PATH</key>
-				<string>$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Info.plist</string>
-			</dict>
-			<key>BuildPhases</key>
-			<array>
-				<dict>
-					<key>Class</key>
-					<string>Sources</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Frameworks</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Headers</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>Resources</string>
-				</dict>
-				<dict>
-					<key>Class</key>
-					<string>ShellScript</string>
-					<key>ShellPath</key>
-					<string>/usr/bin/python</string>
-					<key>ShowEnvVarsInLog</key>
-					<string>false</string>
-					<key>ShellScript</key>
-					<string># TAG: BUILD SCRIPT (do not remove this comment)
+# TAG: BUILD SCRIPT (do not remove this comment)
 # Build script generated using https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
 import logging
 
@@ -341,7 +262,7 @@ class Project:
     def build_full_paths(self, node, base_path):
         # Some nodes are relative to a different source tree, specified as an
         # env variable.
-        if node.get('sourceTree', '&lt;group&gt;') != '&lt;group&gt;':
+        if node.get('sourceTree', '<group>') != '<group>':
             new_base_path = os.environ.get(node['sourceTree'], None)
             if new_base_path:
                 base_path = splitpath(new_base_path)
@@ -367,7 +288,7 @@ class Project:
     #
     def fix_keys(self, obj):
         key_remappings = {'lastKnownFileType': 'fileType', 'explicitFileType': 'fileType'}
-        for key in list(set(key_remappings.keys()) &amp; set(obj.keys())):
+        for key in list(set(key_remappings.keys()) & set(obj.keys())):
             obj[key_remappings[key]] = obj[key]
             del obj[key]
 
@@ -385,7 +306,7 @@ class Project:
     #
     def movable_headers_relative_to(self, relative_path):
         rel_path_length = len(relative_path)
-        result = filter(lambda path: len(path) &gt;= rel_path_length and
+        result = filter(lambda path: len(path) >= rel_path_length and
                                      path[:rel_path_length] == relative_path, self.header_paths)
         return [path[rel_path_length:] for path in result]
 
@@ -562,7 +483,7 @@ def copy_overwrite(src, dst):
         ensure_parent_exists(dst)
         shutil.copytree(src, dst, symlinks=True)
 
-# Attempt to symlink link_path -&gt; link_to.
+# Attempt to symlink link_path -> link_to.
 # link_to must be a path relative to link_path's parent and must exist.
 # If link_path already exists, do nothing.
 #
@@ -572,7 +493,7 @@ def attempt_symlink(link_path, link_to):
 
     # Only make the link if it hasn't already been made
     if not os.path.exists(link_path):
-        log.info("Symlink %s -&gt; %s" % (link_path, link_to))
+        log.info("Symlink %s -> %s" % (link_path, link_to))
         os.symlink(link_to, link_path)
 
 # Takes the last entry in an array-based path and returns a normal path
@@ -594,7 +515,7 @@ def print_and_call(cmd):
     log.info("Cmd " + " ".join(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     result = p.communicate()[0]
-    if len(result) &gt; 0:
+    if len(result) > 0:
         log.info(result)
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, cmd)
@@ -733,9 +654,9 @@ def build_deep_header_hierarchy(project):
 # Add all symlinks needed to make a full framework structure:
 #
 # MyFramework.framework
-# |-- MyFramework -&gt; Versions/Current/MyFramework
-# |-- Headers -&gt; Versions/Current/Headers
-# |-- Resources -&gt; Versions/Current/Resources
+# |-- MyFramework -> Versions/Current/MyFramework
+# |-- Headers -> Versions/Current/Headers
+# |-- Resources -> Versions/Current/Resources
 # `-- Versions
 #     |-- A
 #     |   |-- MyFramework
@@ -746,7 +667,7 @@ def build_deep_header_hierarchy(project):
 #     |       |-- MyViewController.nib
 #     |       `-- en.lproj
 #     |           `-- InfoPlist.strings
-#     `-- Current -&gt; A
+#     `-- Current -> A
 #
 def add_symlinks_to_framework(project):
     base_dir = project.local_built_fw_path
@@ -764,9 +685,9 @@ def add_symlinks_to_framework(project):
 #
 # MyFramework.embeddedframework
 # |-- MyFramework.framework
-# |   |-- MyFramework -&gt; Versions/Current/MyFramework
-# |   |-- Headers -&gt; Versions/Current/Headers
-# |   |-- Resources -&gt; Versions/Current/Resources
+# |   |-- MyFramework -> Versions/Current/MyFramework
+# |   |-- Headers -> Versions/Current/Headers
+# |   |-- Resources -> Versions/Current/Resources
 # |   `-- Versions
 # |       |-- A
 # |       |   |-- MyFramework
@@ -777,9 +698,9 @@ def add_symlinks_to_framework(project):
 # |       |       |-- MyViewController.nib
 # |       |       `-- en.lproj
 # |       |           `-- InfoPlist.strings
-# |       `-- Current -&gt; A
+# |       `-- Current -> A
 # `-- Resources
-#     `-- MyViewController.nib -&gt; ../MyFramework.framework/Resources/MyViewController.nib
+#     `-- MyViewController.nib -> ../MyFramework.framework/Resources/MyViewController.nib
 #
 def build_embedded_framework(project):
     fw_path = project.local_built_fw_path
@@ -899,87 +820,3 @@ if __name__ == "__main__":
             if should_open_build_dir():
                 open_build_dir()
         sys.exit(error_code)
-</string>
-                </dict>
-			</array>
-		</dict>
-	</array>
-	<key>Options</key>
-	<array>
-		<dict>
-			<key>Identifier</key>
-			<string>includeUnitTests</string>
-			<key>Name</key>
-			<string>Include Unit Tests</string>
-			<key>Description</key>
-			<string>Indicates whether a unit test bundle should be created.</string>
-			<key>Type</key>
-			<string>checkbox</string>
-			<key>SortOrder</key>
-			<integer>1</integer>
-			<key>Default</key>
-			<string>true</string>
-			<key>Units</key>
-			<dict>
-				<key>true</key>
-				<array>
-					<dict>
-						<key>Components</key>
-						<array>
-							<dict>
-								<key>Identifier</key>
-								<string>org.stenerud.iosFakeStaticFrameworkUnitTestBundle</string>
-								<key>Name</key>
-								<string>___PACKAGENAME___Tests</string>
-							</dict>
-						</array>
-					</dict>
-				</array>
-			</dict>
-		</dict>
-	</array>
-	<key>Nodes</key>
-	<array>
-		<string>___PACKAGENAME___-Prefix.pch:objC:importFoundation</string>
-		<string>___PACKAGENAME___-Info.plist:fakeIosStaticFramework</string>
-		<string>___PACKAGENAME___-Info.plist:NSHumanReadableCopyright</string>
-        <string>___PACKAGENAMEASIDENTIFIER___.h</string>
-        <string>___PACKAGENAMEASIDENTIFIER___.m</string>
-	</array>
-	<key>Definitions</key>
-	<dict>
-        <key>___PACKAGENAMEASIDENTIFIER___.h</key>
-        <dict>
-                <key>Path</key>
-                <string>___PACKAGENAMEASIDENTIFIER___.h</string>
-        </dict>
-        <key>___PACKAGENAMEASIDENTIFIER___.m</key>
-        <dict>
-                <key>Path</key>
-                <string>___PACKAGENAMEASIDENTIFIER___.m</string>
-        </dict>
-		<key>___PACKAGENAME___-Info.plist:fakeIosStaticFramework</key>
-		<string>&lt;key&gt;CFBundleDevelopmentRegion&lt;/key&gt;
-&lt;string&gt;English&lt;/string&gt;
-&lt;key&gt;CFBundleExecutable&lt;/key&gt;
-&lt;string&gt;${EXECUTABLE_NAME}&lt;/string&gt;
-&lt;key&gt;CFBundleName&lt;/key&gt;
-&lt;string&gt;${PRODUCT_NAME}&lt;/string&gt;
-&lt;key&gt;CFBundleIconFile&lt;/key&gt;
-&lt;string&gt;&lt;/string&gt;
-&lt;key&gt;CFBundleInfoDictionaryVersion&lt;/key&gt;
-&lt;string&gt;6.0&lt;/string&gt;
-&lt;key&gt;CFBundlePackageType&lt;/key&gt;
-&lt;string&gt;FMWK&lt;/string&gt;
-&lt;key&gt;CFBundleSignature&lt;/key&gt;
-&lt;string&gt;????&lt;/string&gt;
-&lt;key&gt;CFBundleVersion&lt;/key&gt;
-&lt;string&gt;1&lt;/string&gt;
-&lt;key&gt;CFBundleShortVersionString&lt;/key&gt;
-&lt;string&gt;1.0&lt;/string&gt;
-&lt;key&gt;NSPrincipalClass&lt;/key&gt;
-&lt;string&gt;&lt;/string&gt;
-</string>
-	</dict>
-</dict>
-</plist>
