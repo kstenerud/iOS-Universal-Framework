@@ -525,7 +525,7 @@ def ensure_parent_exists(path):
 #
 def remove_path(path):
     if os.path.exists(path):
-        if os.path.isdir(path):
+        if os.path.isdir(path) and not os.path.islink(path):
             shutil.rmtree(path)
         else:
             os.remove(path)
@@ -771,9 +771,17 @@ def build_embedded_framework(project):
     fw_path = project.local_built_fw_path
     embedded_path = project.local_built_embedded_fw_path
     fw_name = os.environ['WRAPPER_NAME']
-    remove_path(embedded_path)
-    ensure_path_exists(embedded_path)
-    copy_overwrite(fw_path, os.path.join(embedded_path, fw_name))
+
+    if (os.path.islink(fw_path)):
+        # If the framework path is a link, the build result already in embeddedframework.
+        # Just recreate embeddedframework's Resources
+        remove_path(os.path.join(embedded_path, "Resources"))
+    else:
+        remove_path(embedded_path)
+        ensure_path_exists(embedded_path)
+        copy_overwrite(fw_path, os.path.join(embedded_path, fw_name))
+
+    # Create embeddedframework's Resources        
     ensure_path_exists(os.path.join(embedded_path, "Resources"))
     symlink_source = os.path.join("..", fw_name, "Resources")
     symlink_path = os.path.join(embedded_path, "Resources")
