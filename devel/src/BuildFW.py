@@ -599,6 +599,11 @@ def should_open_build_dir():
     env_setting = os.environ.get('UFW_OPEN_BUILD_DIR', None)
     if env_setting is not None:
         return env_setting
+    
+    # If building on Xcode Bots shouldn't open build directory.
+    build_user = os.environ['USER']
+    if build_user == '_teamsserver':
+        return False
 
     return config_open_build_dir
 
