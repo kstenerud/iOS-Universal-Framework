@@ -189,7 +189,7 @@ and only for Mac since you can't use dynamic frameworks in iOS.
 
 #### Static Framework
 
-A static framework gets liked into your app like a static library would.
+A static framework gets linked into your app like a static library would.
 However, Xcode doesn't include support for static frameworks. These templates
 add in that support. Frameworks are superior to libraries because they can
 include code as well as public headers in a single package.
