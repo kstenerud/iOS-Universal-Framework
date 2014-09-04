@@ -1,3 +1,12 @@
+FINALLY!
+=======
+
+With Xcode 6, Apple has added iOS framework support to their build tools, so this repo can at last be retired!
+
+Please use Apple's framework target for all new projects, as it is less hacky and is supported by Apple themselves.
+
+
+
 iOS Universal Framework Mk 8
 ============================
 
