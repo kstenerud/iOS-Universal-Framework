@@ -1,3 +1,11 @@
+###Fork notes
+This is a fork of https://github.com/kstenerud/iOS-Universal-Framework - a project to allow building so-called "embedded framework"s in Xcode (not the dynamic frameworks that iOS 8+ support, but the older way of including resources along with a static framework that has been around for much longer). 
+
+This fork adds support for including compiled Storyboard files in the `.embeddedframework` - the original repo is long dead because of these dynamic frameworks that Xcode now supports, but many people still use it. 
+
+Tested with Xcode 7.3.1 and the "Fake Framework" approach described in the repo (the original README is reproduced below).
+
+
 FINALLY!
 =======
 

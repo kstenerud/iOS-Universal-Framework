@@ -78,9 +78,10 @@
 					<string>false</string>
 					<key>ShellScript</key>
 					<string># TAG: BUILD SCRIPT (do not remove this comment)
-# Build script generated using https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
-import logging
+# Build script generated using https://github.com/ekilah/iOS-Universal-Framework - a fork of https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
+# Changes in this fork: Support for building an .embeddedframework with storyboards in the framework
 
+import logging
 
 ##############################################################################
 #
@@ -100,8 +101,8 @@ import logging
 #
 # If your framework contains no resources, choose 'framework'.
 #
-config_framework_type = 'framework'
-#config_framework_type = 'embeddedframework'
+#config_framework_type = 'framework'
+config_framework_type = 'embeddedframework'
 
 # Open the build directory in Finder when the universal framework is
 # successfully built.
@@ -544,12 +545,32 @@ def remove_path(path):
         else:
             os.remove(path)
 
-# Move a file or dir, replacing the destination if it exists.
+# Move a file (not a directory), replacing the destination if it exists.
 #
 def move_file(src, dst):
     if src == dst or not os.path.isfile(src):
         return
-    log.info("Move %s to %s" % (src, dst))
+    log.info("Move file %s to %s" % (src, dst))
+    ensure_parent_exists(dst)
+    remove_path(dst)
+    shutil.move(src, dst)
+
+# Move a directory (not a file), replacing the destination if it exists.
+#
+def move_dir(src, dst):
+    if src == dst or not os.path.isdir(src):
+        return
+    log.info("Move dir %s to %s" % (src, dst))
+    ensure_parent_exists(dst)
+    remove_path(dst)
+    shutil.move(src, dst)
+
+# Move a file OR directory, replacing the destination if it exists.
+#
+def move_file_or_dir(src, dst):
+    if src == dst or not os.path.exists(src):
+        return
+    log.info("Move file/dir %s to %s" % (src, dst))
     ensure_parent_exists(dst)
     remove_path(dst)
     shutil.move(src, dst)
@@ -678,6 +699,11 @@ def should_open_build_dir():
     env_setting = os.environ.get('UFW_OPEN_BUILD_DIR', None)
     if env_setting is not None:
         return env_setting
+    
+    # If building on Xcode Bots shouldn't open build directory.
+    build_user = os.environ['USER']
+    if build_user == '_teamsserver':
+        return False
 
     return config_open_build_dir
 
@@ -760,7 +786,8 @@ def add_symlinks_to_framework(project):
 # Build an embedded framework structure.
 # An embedded framework contains the actual framework, plus a "Resources"
 # directory containing symlinks to all resources found in the actual framework,
-# with the exception of "Info.plist" and anything ending in ".lproj":
+# with the exception of "Info.plist" and anything ending in ".lproj".
+# Also, compiled storyboards are not symlinked becuase iOS can't handle that - they are moved from the framework's Resources directory to the embeddedframework's Resources directory:
 #
 # MyFramework.embeddedframework
 # |-- MyFramework.framework
@@ -780,6 +807,7 @@ def add_symlinks_to_framework(project):
 # |       `-- Current -&gt; A
 # `-- Resources
 #     `-- MyViewController.nib -&gt; ../MyFramework.framework/Resources/MyViewController.nib
+#     -- MyStoryboard.storyboardc
 #
 def build_embedded_framework(project):
     fw_path = project.local_built_fw_path
@@ -800,8 +828,14 @@ def build_embedded_framework(project):
     symlink_source = os.path.join("..", fw_name, "Resources")
     symlink_path = os.path.join(embedded_path, "Resources")
     if os.path.isdir(os.path.join(fw_path, "Resources")):
-        for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj"), os.listdir(os.path.join(fw_path, "Resources"))):
+        for file in filter(lambda x: x != "Info.plist" and not x.endswith(".lproj") and not x.endswith(".storyboardc"), os.listdir(os.path.join(fw_path, "Resources"))):
+            log.info("symlinking resource file: " + file)
             attempt_symlink(os.path.join(symlink_path, file), os.path.join(symlink_source, file))
+        for file in filter(lambda x: x.endswith(".storyboardc"), os.listdir(os.path.join(fw_path, "Resources"))):
+            src = os.path.join(embedded_path, fw_name, "Resources", file)
+            dst = os.path.join(symlink_path, file)
+            log.info("moving storyboard instead of symlinking it: " + file)
+            move_file_or_dir(src,dst) #storyboards are directories apparently
 
     # Remove the normal framework and replace it with a symlink to the copy
     # in the embedded framework. This is needed because Xcode runs its strip
