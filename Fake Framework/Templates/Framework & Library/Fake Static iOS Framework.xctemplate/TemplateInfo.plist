@@ -78,10 +78,9 @@
 					<string>false</string>
 					<key>ShellScript</key>
 					<string># TAG: BUILD SCRIPT (do not remove this comment)
-# Build script generated using https://github.com/ekilah/iOS-Universal-Framework - a fork of https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
-# Changes in this fork: Support for building an .embeddedframework with storyboards in the framework
-
+# Build script generated using https://github.com/kstenerud/iOS-Universal-Framework Mk 8 (beta 2012-06-16)
 import logging
+
 
 ##############################################################################
 #
@@ -101,8 +100,8 @@ import logging
 #
 # If your framework contains no resources, choose 'framework'.
 #
-#config_framework_type = 'framework'
-config_framework_type = 'embeddedframework'
+config_framework_type = 'framework'
+#config_framework_type = 'embeddedframework'
 
 # Open the build directory in Finder when the universal framework is
 # successfully built.
